@@ -477,6 +477,18 @@
                     let waveFrame = document.getElementById('waveform-frame');
                     waveFrame.src = data.plot_url;
                     waveFrame.style.display = "block";
+
+                    // <-- ADD THE CONSOLE LOG HERE
+                    if (data.transits) {
+                        console.log("Transit Waveforms Data:");
+                        data.transits.forEach((t, i) => {
+                            console.log(
+                                `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
+                                `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
+                            );
+                        });
+                    }
+                    // ---------------
                 } else {
                     alert("Unexpected response from server.");
                 }

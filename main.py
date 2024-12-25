@@ -152,7 +152,19 @@ def transit_waveforms_route():
             transits, start_date, end_date
         )
 
-        return jsonify({"plot_url": plot_url})
+        return jsonify({
+            "plot_url": plot_url,
+            "transits": [
+                {
+                    "date": t["date"].strftime("%Y-%m-%d"),
+                    "transiting_planet": t["transiting_planet"],
+                    "natal_planet": t["natal_planet"],
+                    "aspect": t["aspect"],
+                    "intensity": round(t["intensity"], 3)
+                }
+                for t in transits
+            ]
+        })
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
