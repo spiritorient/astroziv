@@ -19,16 +19,25 @@
             border-radius: 30px;
             box-shadow: 0px 0px 10px rgba(194, 219, 5, 0.591);
         }
+        .container22 {
+            margin: 0 auto;
+            background: #ffffff00;
+            padding: 10px;
+            border-radius: 30px;
+            box-shadow: 0px 0px 10px rgba(194, 219, 5, 0.591);
+        }
         h1, h2, h3 {
             color: #333;
             text-align: center;
         }
         .form-group {
             margin-bottom: 10px;
+            margin-top: 10px;
         }
         .form-group label {
             display: block;
             margin-bottom: 5px;
+            margin-top: 5px;
             font-weight: bold;
             color: #ffdead;
         }
@@ -51,6 +60,7 @@
             font-size: 16px;
             width: 100%;
             background-color: #ffdead00;
+            margin-top: 15px;
         }
         .form-group button:hover,
         input[type="submit"]:hover {
@@ -99,7 +109,7 @@
                 <input type="text" id="chartName" name="chartName" placeholder="Enter chart name">
             </div>
             <div class="form-group">
-                <label for="dob">Date of Birth (YYYY-MM-DD):</label>
+                <label for="dob">Date of Birth:</label>
                 <input type="date" id="dob" name="dob" required>
             </div>
             <div class="form-group">
@@ -156,18 +166,17 @@
     </div>
 
     <!-- Single Aspect Chart Viewer -->
-    <div class="container" id="chart-container" style="display: none;">
+    <div class="container22" id="chart-container" style="display: none;">
         <h2>Natal Chart Viewer</h2>
         <iframe id="chart-frame" 
                 title="Aspect Chart"
-                style="width: 100%; height: 600px; border: none;">
+                style="width: 100%; height: 100svh; border: none;">
         </iframe>
     </div>
 
     <!-- Transit Waveforms Form (hidden by default) -->
     <div class="container" id="transit-form-container" style="display: none;">
-        <h2>Generate Transit Waveforms</h2>
-        <p>After calculating your natal chart, you can generate transit waveforms for a specific date range.</p>
+        <h2>Generate Transit Waveforms</h2><br>
         <form id="transit-form">
             <div class="form-group">
                 <label for="start_date">Start Date:</label>
@@ -176,7 +185,7 @@
             <div class="form-group">
                 <label for="end_date">End Date:</label>
                 <input type="date" id="end_date" name="end_date" required>
-            </div>
+            </div><br>
 
             <h3>Select Natal Planets to Include</h3>
             <div class="form-group">
@@ -217,14 +226,14 @@
     </div>
 
     <!-- Display Transit Waveform Plot (hidden by default) -->
-    <div class="container" id="waveform-result-container" style="display: none;">
+    <div class="container22" id="waveform-result-container" style="display: none;">
         <div id="waveform-result">
             <h3>Transit Waveform Plot</h3>
             <!-- Changed from <img> to <iframe> for interactive Plotly HTML -->
             <iframe 
                 id="waveform-frame" 
                 title="Transit Waveforms" 
-                style="width: 100%; height: 600px; border: none; display: none;">
+                style="width: 100%; height: 100svh; border: none; display: none;">
             </iframe>
         </div>
     </div>
@@ -281,7 +290,7 @@
                     window.calculatedNatalChart = data.chart; // store globally
 
                     // Display the results
-                    let html = '<h2>' + (data.chartName || 'Your Natal Chart') + '</h2><ul>';
+                    let html = '<h2>' + (data.chartName || 'Natal Celestial Alignments') + '</h2><ul>';
                     for (let body in data.chart) {
                         html += `<li><span>${body}:</span> ${data.chart[body]}</li>`;
                     }

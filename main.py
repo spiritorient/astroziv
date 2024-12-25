@@ -171,7 +171,7 @@ def transit_waveforms_route():
 
 def convert_to_degrees(position):
     """
-    Convert a string like '20° 26' 27.06" Aries' into decimal degrees [0..359].
+   Convert a string like '20° 26' 27.06" Aries' into decimal degrees [0..359].
     """
     pattern = r"""
         (\d+\.?\d*)        # Degrees
@@ -228,7 +228,7 @@ def generate_aspect_plot(positions, selected_aspects):
             r=[0, 1.2],
             theta=[boundary_angle, boundary_angle],
             mode="lines",
-            line=dict(color="gray", width=1, dash="dot"),
+            line=dict(color="#333", width=0.6, dash="dot"),
             showlegend=False,
             hoverinfo="none"
         ))
@@ -240,10 +240,30 @@ def generate_aspect_plot(positions, selected_aspects):
             theta=[angle],
             mode="text",
             text=[sign],
-            textfont=dict(size=12),
+            textfont=dict(size=12, color="#333"),
             showlegend=False,
             hoverinfo="none"
         ))
+
+    # Draw aspect lines
+    for planet1, angle1 in positions.items():
+        for planet2, angle2 in positions.items():
+            if planet1 < planet2:
+                difference = abs(angle1 - angle2)
+                if difference > 180:
+                    difference = 360 - difference
+                for aspect_name in selected_aspects:
+                    aspect_angle = aspects[aspect_name]
+                    if abs(difference - aspect_angle) <= orb[aspect_name]:
+                        color = aspect_colors.get(aspect_name, "cyan")
+                        fig.add_trace(go.Scatterpolar(
+                            r=[1, 1],
+                            theta=[angle1, angle2],
+                            mode="lines",
+                            line=dict(color=color, width=1),
+                            name=f"{planet1}-{aspect_name}-{planet2}",
+                            hoverinfo="skip"
+                        ))
 
     # Plot planets
     planet_r = []
@@ -263,41 +283,21 @@ def generate_aspect_plot(positions, selected_aspects):
         mode="markers+text",
         text=planet_text,
         textposition="middle center",
-        marker=dict(size=15, color="#636363"),
-        textfont=dict(size=11),
+        marker=dict(size=18, color="black", line = dict(color = '#ffdead', width = 1)),
+        textfont=dict(size=12, color="#ffdead"),
         hovertemplate="%{hovertext}<extra></extra>",
         hovertext=planet_hover,
         showlegend=False
     ))
-
-    # Draw aspect lines
-    for planet1, angle1 in positions.items():
-        for planet2, angle2 in positions.items():
-            if planet1 < planet2:
-                difference = abs(angle1 - angle2)
-                if difference > 180:
-                    difference = 360 - difference
-                for aspect_name in selected_aspects:
-                    aspect_angle = aspects[aspect_name]
-                    if abs(difference - aspect_angle) <= orb[aspect_name]:
-                        color = aspect_colors.get(aspect_name, "cyan")
-                        fig.add_trace(go.Scatterpolar(
-                            r=[0.98, 0.98],
-                            theta=[angle1, angle2],
-                            mode="lines",
-                            line=dict(color=color, width=2),
-                            name=f"{planet1}-{aspect_name}-{planet2}",
-                            hoverinfo="skip"
-                        ))
 
     fig.update_layout(
         template="plotly_dark",
         polar=dict(
             angularaxis=dict(
                 showgrid=True,
-                linecolor="#03002C",
+                linecolor="#333",
                 gridcolor="gray",
-                linewidth=1,
+                linewidth=0.5,
                 showline=True,
                 tickmode="array",
                 tickvals=[],
@@ -307,15 +307,15 @@ def generate_aspect_plot(positions, selected_aspects):
         ),
         dragmode="pan",
         margin=dict(t=40, b=40, l=40, r=40),
-        annotations=[
-            dict(
-                text="Use scroll/box zoom to explore, drag to rotate",
-                x=0.5, y=-0.1,
-                xref="paper", yref="paper",
-                showarrow=False,
-                font=dict(size=12, color="gray")
-            )
-        ]
+        # annotations=[
+        #    dict(
+        #        text="Use scroll/box zoom to explore, drag to rotate",
+        #        x=0.5, y=1.05,
+        #        xref="paper", yref="paper",
+        #        showarrow=False,
+        #        font=dict(size=12, color="gray")
+        #    )
+        # ]
     )
 
     html_path = "static/aspect_plot.html"
@@ -327,10 +327,6 @@ def generate_aspect_plot(positions, selected_aspects):
             "displayModeBar": True,
             "modeBarButtonsToRemove": [],
             "modeBarButtonsToAdd": [
-                "zoomIn2d", 
-                "zoomOut2d", 
-                "resetScale2d",
-                "pan2d"
             ]
         }
     )

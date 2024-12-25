@@ -40,7 +40,7 @@ def calculate_transit_waveforms(natal_positions, start_date, end_date, transitin
                             'intensity': intensity,
                         })
                         # Optional: Print transit details for debugging
-                        # print(f"Transit: {transits[-1]}")
+                        #print(f"Transit: {transits[-1]}")
 
         current_date += timedelta(days=1)
 
@@ -71,7 +71,7 @@ def generate_interactive_transit_waveform_plot(transits, start_date, end_date):
                 y=intensity,
                 mode='lines',
                 name=label,
-                hoverinfo='name+y',
+                hoverinfo='all',
                 line=dict(width=2),  # Adjust line thickness
             )
         )
@@ -82,7 +82,7 @@ def generate_interactive_transit_waveform_plot(transits, start_date, end_date):
         xaxis_title='Date',
         yaxis_title='Intensity',
         legend_title='Aspects',
-        hovermode='x unified',
+        hovermode='x',
     )
 
     # Save as an HTML file for rendering in a browser
