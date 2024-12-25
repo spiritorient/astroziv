@@ -9,51 +9,54 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #000000;
         }
         .container {
-            max-width: 800px;
+            max-width: 400px;
             margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff00;
+            padding: 10px;
+            border-radius: 30px;
+            box-shadow: 0px 0px 10px rgba(194, 219, 5, 0.591);
         }
         h1, h2, h3 {
             color: #333;
             text-align: center;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #333;
+            color: #ffdead;
         }
         .form-group input,
         .form-group select {
-            width: 100%;
             padding: 10px;
             box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid #ffdead;
+            border-radius: 100px;
             margin-bottom: 10px;
+            background-color: #333;
         }
         .form-group button,
         input[type="submit"] {
             padding: 10px 20px;
-            color: black;
-            border: none;
-            border-radius: 5px;
+            color: #ffdead;
+            border: 1px solid #ffdead;
+            border-radius: 100px;
             cursor: pointer;
             font-size: 16px;
             width: 100%;
+            background-color: #ffdead00;
         }
         .form-group button:hover,
         input[type="submit"]:hover {
-            background-color: navajowhite;
+            background-color: #ffdead;
+            color: black;
+            border: 2px double black;
         }
         .results {
             margin-top: 20px;
@@ -64,14 +67,14 @@
         }
         .results li {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #ffdead;
             margin-bottom: 5px;
             border-radius: 4px;
-            background: #f9f9f9;
+            background: #333;
         }
         .results li span {
             font-weight: bold;
-            color: #333;
+            color: #000000;
         }
         #map {
             height: 400px;
@@ -88,7 +91,7 @@
 <body>
     <!-- Natal Chart Calculation Form -->
     <div class="container">
-        <h1>Natal Chart</h1>
+        <h1>·ASTROŽIV·</h1>
         <form id="natal-form">
             <div id="map"></div>
             <div style="display: none;">
@@ -140,8 +143,10 @@
             <h3>Select Aspects to Display</h3>
             {% for aspect in aspects %}
             <div class="form-group">
-                <label for="{{ aspect }}">{{ aspect }}</label>
-                <input type="checkbox" id="{{ aspect }}" name="{{ aspect }}">
+                <label for="{{ aspect }}">
+                    <input type="checkbox" id="{{ aspect }}" name="{{ aspect }}" checked>
+                    {{ aspect }}
+                </label><br>
             </div>
             {% endfor %}
             <div class="form-group">
@@ -260,6 +265,9 @@
             if (data.lat) data.lat = parseFloat(data.lat);
             if (data.lon) data.lon = parseFloat(data.lon);
 
+            // NEW: Log user input before sending
+            console.log("[NATAL FORM] Submitting data:", data);
+
             fetch("/calculate_natal_chart", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -371,6 +379,9 @@
                 aspects: selectedAspects
             };
 
+            // NEW: Log what we’re sending
+            console.log("[ASPECT PLOT] Payload to /generate_plot:", data);
+
             fetch("/generate_plot", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -399,105 +410,83 @@
         //  TRANSIT WAVEFORMS
         // =====================================
         document.getElementById('transit-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            let startDate = document.getElementById('start_date').value;
-            let endDate = document.getElementById('end_date').value;
-            let natalChartData = window.calculatedNatalChart;
-            if (!natalChartData) {
-                alert("Please calculate your natal chart first.");
-                return;
+    let startDate = document.getElementById('start_date').value;
+    let endDate = document.getElementById('end_date').value;
+    let natalChartData = window.calculatedNatalChart;
+
+    // Additional logs for user checks
+    console.log("[TRANSIT WAVEFORMS] Start date:", startDate);
+    console.log("[TRANSIT WAVEFORMS] End date:", endDate);
+
+    let selectedNatalPlanets = Array.from(
+        document.querySelectorAll('input[name="natal_planets"]:checked')
+    ).map(cb => cb.value);
+
+    let selectedTransitingPlanets = Array.from(
+        document.querySelectorAll('input[name="transiting_planets"]:checked')
+    ).map(cb => cb.value);
+
+    let selectedAspects = Array.from(
+        document.querySelectorAll('input[name="transit_aspects"]:checked')
+    ).map(cb => cb.value);
+
+    // Build payload
+    let filteredNatalChartData = {};
+    for (let planet of selectedNatalPlanets) {
+        if (natalChartData.hasOwnProperty(planet)) {
+            filteredNatalChartData[planet] = natalChartData[planet];
+        }
+    }
+
+    let payload = {
+        start_date: startDate,
+        end_date: endDate,
+        natal_chart: filteredNatalChartData,
+        transiting_planets: selectedTransitingPlanets,
+        aspects: selectedAspects
+    };
+
+    // Log what we’re sending
+    console.log("[TRANSIT WAVEFORMS] Payload to /transit_waveforms:", payload);
+
+    fetch("/transit_waveforms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("[TRANSIT WAVEFORMS] Response:", data);
+
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else if (data.plot_url) {
+            document.getElementById('waveform-result-container').style.display = 'block';
+            let waveFrame = document.getElementById('waveform-frame');
+            waveFrame.src = data.plot_url;
+            waveFrame.style.display = "block";
+
+            // Transit details
+            if (data.transits) {
+                console.log("Transit Waveforms Data:");
+                data.transits.forEach((t, i) => {
+                    console.log(
+                        `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
+                        `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
+                    );
+                });
             }
-
-            // Selected natal planets
-            let selectedNatalPlanets = Array.from(
-                document.querySelectorAll('input[name="natal_planets"]:checked')
-            ).map(cb => cb.value);
-            if (selectedNatalPlanets.length === 0) {
-                alert("Please select at least one natal planet.");
-                return;
-            }
-
-            // Selected transiting planets
-            let selectedTransitingPlanets = Array.from(
-                document.querySelectorAll('input[name="transiting_planets"]:checked')
-            ).map(cb => cb.value);
-            if (selectedTransitingPlanets.length === 0) {
-                alert("Please select at least one transiting planet.");
-                return;
-            }
-
-            // Selected aspects
-            let selectedAspects = Array.from(
-                document.querySelectorAll('input[name="transit_aspects"]:checked')
-            ).map(cb => cb.value);
-            if (selectedAspects.length === 0) {
-                alert("Please select at least one aspect.");
-                return;
-            }
-
-            // Validate date range
-            if (!startDate || !endDate) {
-                alert("Start Date and End Date are required.");
-                return;
-            }
-            if (new Date(startDate) > new Date(endDate)) {
-                alert("Start Date cannot be after End Date.");
-                return;
-            }
-
-            // Filter natal chart for chosen natal planets only
-            let filteredNatalChartData = {};
-            for (let planet of selectedNatalPlanets) {
-                if (natalChartData.hasOwnProperty(planet)) {
-                    filteredNatalChartData[planet] = natalChartData[planet];
-                }
-            }
-
-            let payload = {
-                start_date: startDate,
-                end_date: endDate,
-                natal_chart: filteredNatalChartData,
-                transiting_planets: selectedTransitingPlanets,
-                aspects: selectedAspects
-            };
-
-            fetch("/transit_waveforms", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    alert("Error: " + data.error);
-                } else if (data.plot_url) {
-                    document.getElementById('waveform-result-container').style.display = 'block';
-                    // Use an iframe to load the interactive Plotly HTML
-                    let waveFrame = document.getElementById('waveform-frame');
-                    waveFrame.src = data.plot_url;
-                    waveFrame.style.display = "block";
-
-                    // <-- ADD THE CONSOLE LOG HERE
-                    if (data.transits) {
-                        console.log("Transit Waveforms Data:");
-                        data.transits.forEach((t, i) => {
-                            console.log(
-                                `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
-                                `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
-                            );
-                        });
-                    }
-                    // ---------------
-                } else {
-                    alert("Unexpected response from server.");
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("An error occurred while generating the waveforms. Please try again.");
-            });
-        });
+        } else {
+            alert("Unexpected response from server.");
+        }
+    })
+    .catch(err => {
+        console.error("[TRANSIT WAVEFORMS] Error:", err);
+        alert("An error occurred while generating the waveforms. Please try again.");
+    });
+});
     </script>
 </body>
 </html>
