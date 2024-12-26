@@ -217,6 +217,20 @@
                 {% endfor %}
             </div>
 
+            <h3>Select Plot Template</h3>
+            <div class="form-group">
+                <select id="plot-template" name="template">
+                    <option value="plotly_dark" selected>Dark</option>
+                    <option value="plotly_white">Light</option>
+                    <option value="ggplot2">GGPlot</option>
+                    <option value="seaborn">Seaborn</option>
+                    <option value="simple_white">White</option>
+                    <option value="plotly">Plotly</option>
+                    <option value="presentation">Presentation</option>
+                    <option value="gridon">Grid·on</option>
+                </select>
+            </div>
+
             <!-- Hidden input to store natal chart data -->
             <input type="hidden" id="natal_chart" name="natal_chart">
             <div class="form-group">
@@ -419,83 +433,84 @@
         //  TRANSIT WAVEFORMS
         // =====================================
         document.getElementById('transit-form').addEventListener('submit', function(e) {
-    e.preventDefault();
+            e.preventDefault();
 
-    let startDate = document.getElementById('start_date').value;
-    let endDate = document.getElementById('end_date').value;
-    let natalChartData = window.calculatedNatalChart;
+            let startDate = document.getElementById('start_date').value;
+            let endDate = document.getElementById('end_date').value;
+            let natalChartData = window.calculatedNatalChart;
+            let template = document.getElementById('plot-template').value;
 
-    // Additional logs for user checks
-    console.log("[TRANSIT WAVEFORMS] Start date:", startDate);
-    console.log("[TRANSIT WAVEFORMS] End date:", endDate);
+            // Additional logs for user checks
+            console.log("[TRANSIT WAVEFORMS] Start date:", startDate);
+            console.log("[TRANSIT WAVEFORMS] End date:", endDate);
 
-    let selectedNatalPlanets = Array.from(
-        document.querySelectorAll('input[name="natal_planets"]:checked')
-    ).map(cb => cb.value);
+            let selectedNatalPlanets = Array.from(
+                document.querySelectorAll('input[name="natal_planets"]:checked')
+            ).map(cb => cb.value);
 
-    let selectedTransitingPlanets = Array.from(
-        document.querySelectorAll('input[name="transiting_planets"]:checked')
-    ).map(cb => cb.value);
+            let selectedTransitingPlanets = Array.from(
+                document.querySelectorAll('input[name="transiting_planets"]:checked')
+            ).map(cb => cb.value);
 
-    let selectedAspects = Array.from(
-        document.querySelectorAll('input[name="transit_aspects"]:checked')
-    ).map(cb => cb.value);
+            let selectedAspects = Array.from(
+                document.querySelectorAll('input[name="transit_aspects"]:checked')
+            ).map(cb => cb.value);
 
-    // Build payload
-    let filteredNatalChartData = {};
-    for (let planet of selectedNatalPlanets) {
-        if (natalChartData.hasOwnProperty(planet)) {
-            filteredNatalChartData[planet] = natalChartData[planet];
-        }
-    }
-
-    let payload = {
-        start_date: startDate,
-        end_date: endDate,
-        natal_chart: filteredNatalChartData,
-        transiting_planets: selectedTransitingPlanets,
-        aspects: selectedAspects
-    };
-
-    // Log what we’re sending
-    console.log("[TRANSIT WAVEFORMS] Payload to /transit_waveforms:", payload);
-
-    fetch("/transit_waveforms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("[TRANSIT WAVEFORMS] Response:", data);
-
-        if (data.error) {
-            alert("Error: " + data.error);
-        } else if (data.plot_url) {
-            document.getElementById('waveform-result-container').style.display = 'block';
-            let waveFrame = document.getElementById('waveform-frame');
-            waveFrame.src = data.plot_url;
-            waveFrame.style.display = "block";
-
-            // Transit details
-            if (data.transits) {
-                console.log("Transit Waveforms Data:");
-                data.transits.forEach((t, i) => {
-                    console.log(
-                        `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
-                        `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
-                    );
-                });
+            // Build payload
+            let filteredNatalChartData = {};
+            for (let planet of selectedNatalPlanets) {
+                if (natalChartData.hasOwnProperty(planet)) {
+                    filteredNatalChartData[planet] = natalChartData[planet];
+                }
             }
-        } else {
-            alert("Unexpected response from server.");
-        }
-    })
-    .catch(err => {
-        console.error("[TRANSIT WAVEFORMS] Error:", err);
-        alert("An error occurred while generating the waveforms. Please try again.");
-    });
-});
+
+            let payload = {
+                start_date: startDate,
+                end_date: endDate,
+                natal_chart: filteredNatalChartData,
+                transiting_planets: selectedTransitingPlanets,
+                aspects: selectedAspects,
+                template: template
+            };
+
+            // Log what we’re sending
+            console.log("[TRANSIT WAVEFORMS] Payload to /transit_waveforms:", payload);
+
+            fetch("/transit_waveforms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("[TRANSIT WAVEFORMS] Response:", data);
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else if (data.plot_url) {
+                    document.getElementById('waveform-result-container').style.display = 'block';
+                    let waveFrame = document.getElementById('waveform-frame');
+                    waveFrame.src = data.plot_url;
+                    waveFrame.style.display = "block";
+
+                    // Transit details
+                    if (data.transits) {
+                        console.log("Transit Waveforms Data:");
+                        data.transits.forEach((t, i) => {
+                            console.log(
+                                `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
+                                `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
+                            );
+                        });
+                    }
+                } else {
+                    alert("Unexpected response from server.");
+                }
+            })
+            .catch(err => {
+                console.error("[TRANSIT WAVEFORMS] Error:", err);
+                alert("An error occurred while generating the waveforms. Please try again.");
+            });
+        });
     </script>
 </body>
 </html>

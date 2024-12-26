@@ -131,6 +131,7 @@ def transit_waveforms_route():
         end_date = datetime.strptime(data.get("end_date"), "%Y-%m-%d")
         selected_transiting_planets = data.get("transiting_planets")
         selected_aspects = data.get("aspects")
+        template = data.get("template", "plotly_dark")  # Default to "plotly_dark"
 
         # Validate
         if (not natal_chart_positions or not start_date or not end_date 
@@ -149,7 +150,7 @@ def transit_waveforms_route():
         )
 
         plot_url = transit_waveforms.generate_interactive_transit_waveform_plot(
-            transits, start_date, end_date
+            transits, start_date, end_date, template=template  # Pass the template here
         )
 
         return jsonify({

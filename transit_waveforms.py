@@ -47,9 +47,9 @@ def calculate_transit_waveforms(natal_positions, start_date, end_date, transitin
     print(f"Total transits calculated: {len(transits)}")
     return transits
 
-def generate_interactive_transit_waveform_plot(transits, start_date, end_date):
+def generate_interactive_transit_waveform_plot(transits, start_date, end_date, template="plotly_dark"):
     """
-    Generate an interactive waveform plot using Plotly.
+    Generate an interactive waveform plot using Plotly with a customizable template.
     """
     dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
     intensity_data = {}
@@ -83,6 +83,7 @@ def generate_interactive_transit_waveform_plot(transits, start_date, end_date):
         yaxis_title='Intensity',
         legend_title='Aspects',
         hovermode='x',
+        template=template  # Apply the chosen template here
     )
 
     # Save as an HTML file for rendering in a browser
