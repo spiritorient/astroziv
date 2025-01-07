@@ -9,4 +9,4 @@ Matplotlib
 datetime
 plotly
 openai
-dotenv
+python-dotenv
