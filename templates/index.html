@@ -658,17 +658,13 @@
         return;
     }
 
-    let summary = "Here are the calculated transits:\n\n";
-    window.lastTransits.forEach((t, i) => {
-        summary += `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
-            + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
-    });
-    summary += "\nPlease provide an insightful analysis of these transits.\n";
-
-    console.log("[Waveforms -> GPT] waveforms_text:", summary);
+    const summary = window.lastTransits.map((t, i) => 
+        `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
+        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}`
+    ).join("\n");
 
     const resultContainer = document.getElementById("results");
-    resultContainer.innerHTML = ""; // Clear previous content
+    resultContainer.innerHTML = "<p>Analyzing waveforms...</p>"; // Initial message
 
     fetch("/analyze_waveforms", {
         method: "POST",
@@ -684,10 +680,16 @@
 
             function readStream() {
                 reader.read().then(({ done, value }) => {
-                    if (done) return; // End of stream
+                    if (done) {
+                        resultContainer.innerHTML += "<p><b>Analysis complete.</b></p>";
+                        return;
+                    }
                     const chunk = decoder.decode(value, { stream: true });
                     resultContainer.innerHTML += chunk; // Append streamed content
                     readStream(); // Continue reading
+                }).catch(err => {
+                    console.error("Error while reading stream:", err);
+                    resultContainer.innerHTML += `<p><b>Streaming error:</b> ${err.message}</p>`;
                 });
             }
 
