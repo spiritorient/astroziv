@@ -1,6 +1,11 @@
+# openaiApi.py
+
 import os
 import openai
 from dotenv import load_dotenv
+
+from openai import OpenAI
+client = OpenAI()
 
 # Load environment variables (e.g., OPENAI_API_KEY) from .env, if present
 load_dotenv()
@@ -10,26 +15,47 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
     raise ValueError("Missing OPENAI_API_KEY environment variable.")
 
-def analyze_data_with_gpt_stream(data):
+def analyze_data_with_gpt(data):
     """
-    Sends 'data' to GPT for streaming analysis.
-    Yields chunks of the GPT response.
+    Sends the 'data' to GPT for analysis using openai>=1.0.0.
+    Returns the GPT response text.
     """
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "user", "content": f"Analyze the following data:\n\n{data}"}
-            ],
-            stream=True  # Enable streaming
-        )
+    # Using new openai>=1.0.0 syntax: openai.Chat.create(...)
+    response = client.chat.completions.create(
+        model="o1-preview",  # or "gpt-4", "gpt-3.5-turbo-16k", etc.
+        messages=[
+            # {"role": "system", "content": "You're an excellent and experienced intellectual academic expert. You apply analytical interdisciplinary methodology by merging relevant scientific branches. Discursive, extensive and enlightening analysis. Depth analysis and content breakdown. You pay particular attention to the exhaustive and sovereign derivation of definitions of terms. Analytically you connect context and self-inciatively create textually and intellectually rich and deep content. Qualitative and quantitative writing style."},
+            {
+                "role": "user",
+                "content": f"Please analyze the following data as roleplaying a role of adept astrologist:\n\n{data}\n"
+            }
+        ],
+       # temperature=0.7
+    )
+    print("      ")
+    print("      ")
+    print("      ")
+    print("      ")
+    print(response.usage.prompt_tokens)
+    print(response.usage.completion_tokens)
+    print("      ")
+    print("      ")
+    print("      ")
+    print("      ")
+    print("      ")
+    print("      ")
+    print("      ")
 
-        for chunk in response:
-            if "choices" in chunk:
-                for choice in chunk["choices"]:
-                    if "delta" in choice and "content" in choice["delta"]:
-                        yield choice["delta"]["content"]
+    return response.choices[0].message.content
 
-    except Exception as e:
-        print("Error during GPT streaming analysis:", e)
-        yield f"Error: {str(e)}"
+
+# Optional: test locally
+if __name__ == "__main__":
+    sample_text = """
+    Mars transiting Jupiter with a conjunction on 2025-01-01.
+    Transit intensity is high. 
+    """
+    result = analyze_data_with_gpt(sample_text)
+    print("GPT Analysis Result:")
+    print("--------------------")
+    print(result)
