@@ -212,12 +212,9 @@ def snapshot_aspect_chart_data():
 # -----------------------------------------------------------
 #   GPT Analysis Route
 # -----------------------------------------------------------
+
 @app.route("/analyze_waveforms", methods=["POST"])
 def analyze_waveforms():
-    """
-    Receives waveforms (or any other data) from the frontend,
-    calls GPT for an analysis, and returns the analysis text.
-    """
     try:
         data = request.json
         if not data or "waveforms_text" not in data:
@@ -225,11 +222,17 @@ def analyze_waveforms():
 
         waveforms_text = data["waveforms_text"]
         result = openaiApi.analyze_data_with_gpt(waveforms_text)
-        print("[/analyze_waveforms] GPT analysis result:", result)
-        return jsonify({"analysis": result}), 200
+
+        # Ensure the result is a string
+        if isinstance(result, str):
+            return jsonify({"analysis": result}), 200
+        else:
+            return jsonify({"error": "Unexpected GPT response format."}), 500
     except Exception as e:
-        print("[/analyze_waveforms] Error:", e)
+        print("Error in /analyze_waveforms:", e)
         return jsonify({"error": str(e)}), 500
+
+
 
 # -----------------------------------------------------------
 #   Helper Functions
