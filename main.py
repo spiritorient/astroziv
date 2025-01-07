@@ -3,7 +3,7 @@ import platform
 import re
 from datetime import datetime
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request, Response, render_template
 import plotly.graph_objects as go
 
 import natal_chart
@@ -213,8 +213,6 @@ def snapshot_aspect_chart_data():
 #   GPT Analysis Route
 # -----------------------------------------------------------
 
-from flask import Response
-
 @app.route("/analyze_waveforms", methods=["POST"])
 def analyze_waveforms():
     """
@@ -236,8 +234,6 @@ def analyze_waveforms():
     except Exception as e:
         print("Error in /analyze_waveforms:", e)
         return jsonify({"error": str(e)}), 500
-
-
 
 # -----------------------------------------------------------
 #   Helper Functions

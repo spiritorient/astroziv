@@ -652,55 +652,26 @@
             });
         }
 
-        function analyzeWaveformsWithGPT() {
-    if (!window.lastTransits || window.lastTransits.length === 0) {
-        alert("No transits available! Generate waveforms first.");
-        return;
-    }
+        async function analyzeWaveforms() {
+            const waveformsText = "Sample waveform text for GPT analysis."; // Replace with dynamic content if needed
+            const responseContainer = document.getElementById("response");
+            responseContainer.textContent = ""; // Clear previous content
 
-    const summary = window.lastTransits.map((t, i) => 
-        `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
-        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}`
-    ).join("\n");
+            const response = await fetch("/analyze_waveforms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ waveforms_text: waveformsText })
+            });
 
-    const resultContainer = document.getElementById("results");
-    resultContainer.innerHTML = "<p>Analyzing waveforms...</p>"; // Initial message
-
-    fetch("/analyze_waveforms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waveforms_text: summary })
-    })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP error! Status: ${res.status}`);
-            }
-            const reader = res.body.getReader();
+            const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
 
-            function readStream() {
-                reader.read().then(({ done, value }) => {
-                    if (done) {
-                        resultContainer.innerHTML += "<p><b>Analysis complete.</b></p>";
-                        return;
-                    }
-                    const chunk = decoder.decode(value, { stream: true });
-                    resultContainer.innerHTML += chunk; // Append streamed content
-                    readStream(); // Continue reading
-                }).catch(err => {
-                    console.error("Error while reading stream:", err);
-                    resultContainer.innerHTML += `<p><b>Streaming error:</b> ${err.message}</p>`;
-                });
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                responseContainer.textContent += decoder.decode(value, { stream: true });
             }
-
-            readStream();
-        })
-        .catch(err => {
-            console.error("Streaming error:", err);
-            resultContainer.innerHTML = `<p>An error occurred: ${err.message}</p>`;
-        });
-}
-
+        }
         
     </script>
 
