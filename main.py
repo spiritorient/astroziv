@@ -3,7 +3,7 @@ import platform
 import re
 from datetime import datetime
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request, Response, render_template
 import plotly.graph_objects as go
 
 import natal_chart
@@ -212,11 +212,11 @@ def snapshot_aspect_chart_data():
 # -----------------------------------------------------------
 #   GPT Analysis Route
 # -----------------------------------------------------------
+
 @app.route("/analyze_waveforms", methods=["POST"])
 def analyze_waveforms():
     """
-    Receives waveforms (or any other data) from the frontend,
-    calls GPT for an analysis, and returns the analysis text.
+    Stream GPT response for analyzing waveforms.
     """
     try:
         data = request.json
@@ -224,11 +224,15 @@ def analyze_waveforms():
             return jsonify({"error": "No 'waveforms_text' field provided."}), 400
 
         waveforms_text = data["waveforms_text"]
-        result = openaiApi.analyze_data_with_gpt(waveforms_text)
-        print("[/analyze_waveforms] GPT analysis result:", result)
-        return jsonify({"analysis": result}), 200
+
+        # Use Flask's Response to stream content
+        def generate_stream():
+            for chunk in openaiApi.analyze_data_with_gpt_stream(waveforms_text):
+                yield chunk
+
+        return Response(generate_stream(), content_type="text/plain")
     except Exception as e:
-        print("[/analyze_waveforms] Error:", e)
+        print("Error in /analyze_waveforms:", e)
         return jsonify({"error": str(e)}), 500
 
 # -----------------------------------------------------------
