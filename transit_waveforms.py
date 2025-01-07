@@ -1,36 +1,43 @@
+# transit_waveforms.py
+
 import os
 import plotly.graph_objects as go
 from datetime import timedelta
-import natal_chart  # Reuse your natal_chart module for transit position calculations
+import natal_chart
 
-# Define planets, aspects, and orbs
 planets = ["Jupiter", "Mars", "Mercury", "Moon", "Neptune", "Pluto",
            "Saturn", "Sun", "Uranus", "Venus"]
-aspects = {"Conjunction": 0, "Opposition": 180, "Trine": 120,
-           "Square": 90, "Sextile": 60}
-orb = {"Conjunction": 8, "Opposition": 8, "Trine": 8,
-       "Square": 8, "Sextile": 6}
+aspects = {
+    "Conjunction": 0,
+    "Opposition": 180,
+    "Trine": 120,
+    "Square": 90,
+    "Sextile": 60
+}
+orb = {
+    "Conjunction": 8,
+    "Opposition": 8,
+    "Trine": 8,
+    "Square": 8,
+    "Sextile": 6
+}
 
-def calculate_transit_waveforms(natal_positions, start_date, end_date, transiting_planets, selected_aspects):
-    """
-    Calculate transit interactions for a natal chart over a date range.
-    """
-    print(f"Calculating transit waveforms from {start_date} to {end_date}")
+def calculate_transit_waveforms(natal_positions, start_date, end_date,
+                                transiting_planets, selected_aspects):
     current_date = start_date
     transits = []
 
     while current_date <= end_date:
         for planet in transiting_planets:
             transit_position = natal_chart.get_transit_position(current_date, planet)
-
             for natal_planet, natal_position in natal_positions.items():
                 for aspect_name in selected_aspects:
                     exact_angle = aspects[aspect_name]
                     angle_diff = abs((transit_position - natal_position - exact_angle) % 360)
                     if angle_diff > 180:
-                        angle_diff = 360 - angle_diff  # Normalize angle difference
+                        angle_diff = 360 - angle_diff
 
-                    if angle_diff <= orb[aspect_name]:  # Within orb
+                    if angle_diff <= orb[aspect_name]:
                         intensity = 1 - angle_diff / orb[aspect_name]
                         transits.append({
                             'date': current_date,
@@ -39,54 +46,46 @@ def calculate_transit_waveforms(natal_positions, start_date, end_date, transitin
                             'aspect': aspect_name,
                             'intensity': intensity,
                         })
-                        # Optional: Print transit details for debugging
-                        #print(f"Transit: {transits[-1]}")
-
         current_date += timedelta(days=1)
 
-    print(f"Total transits calculated: {len(transits)}")
     return transits
 
-def generate_interactive_transit_waveform_plot(transits, start_date, end_date, template="plotly_dark"):
+def build_waveform_figure_dict(transits, start_date, end_date, template="plotly_dark"):
     """
-    Generate an interactive waveform plot using Plotly with a customizable template.
+    Build a Plotly figure dictionary (data + layout)
+    that the frontend can consume to do Plotly.newPlot(...).
     """
-    dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-    intensity_data = {}
+    # Create a day list
+    day_count = (end_date - start_date).days + 1
+    dates = [start_date + timedelta(days=i) for i in range(day_count)]
+
+    # Map "label" -> intensities
+    intensity_map = {}
     for t in transits:
-        key = f"{t['transiting_planet']} {t['aspect']} {t['natal_planet']}"
-        if key not in intensity_data:
-            intensity_data[key] = [0] * len(dates)
-        index = (t['date'] - start_date).days
-        intensity_data[key][index] = t['intensity']
+        label = f"{t['transiting_planet']} {t['aspect']} {t['natal_planet']}"
+        if label not in intensity_map:
+            intensity_map[label] = [0]*day_count
+        idx = (t['date'] - start_date).days
+        intensity_map[label][idx] = t['intensity']
 
-    # Create the Plotly figure
     fig = go.Figure()
+    for label, intensities in intensity_map.items():
+        fig.add_trace(go.Scatter(
+            x=[d.strftime("%Y-%m-%d") for d in dates],
+            y=intensities,
+            mode='lines',
+            name=label
+        ))
 
-    # Add each wave to the plot
-    for label, intensity in intensity_data.items():
-        fig.add_trace(
-            go.Scatter(
-                x=dates,
-                y=intensity,
-                mode='lines',
-                name=label,
-                hoverinfo='all',
-                line=dict(width=2),  # Adjust line thickness
-            )
-        )
-
-    # Customize layout
     fig.update_layout(
         title='Interactive Transit Waveforms',
         xaxis_title='Date',
         yaxis_title='Intensity',
-        legend_title='Aspects',
         hovermode='x',
-        template=template  # Apply the chosen template here
+        template=template
     )
 
-    # Save as an HTML file for rendering in a browser
-    html_path = 'static/transit_waveforms.html'
-    fig.write_html(html_path)
-    return html_path
+    return {
+        "data": [trace.to_plotly_json() for trace in fig.data],
+        "layout": fig.layout.to_plotly_json()
+    }

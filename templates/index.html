@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Natal Chart Generator</title>
+    <!-- Leaflet CSS, etc. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+    <!-- Plotly (for waveforms and aspect wheels) -->
+    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,6 +54,7 @@
             border-radius: 100px;
             margin-bottom: 10px;
             background-color: #333;
+            color: #ffdead;
         }
         .form-group button,
         input[type="submit"] {
@@ -94,6 +100,28 @@
         /* Hide Leaflet attribution controls */
         .leaflet-control-attribution {
             display: none !important;
+        }
+
+        /* Modal for single-date aspect snapshot */
+        #snapshotModal {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+        }
+        #snapshotContent {
+            background: #333; 
+            width: 80%;
+            margin: 5% auto; 
+            padding: 20px; 
+            border-radius: 8px;
+            position: relative;
+        }
+        #snapshotContent button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
     </style>
 </head>
@@ -165,7 +193,7 @@
         </form>
     </div>
 
-    <!-- Single Aspect Chart Viewer -->
+    <!-- Single Aspect Chart Viewer (Natal) -->
     <div class="container22" id="chart-container" style="display: none;">
         <h2>Natal Chart Viewer</h2>
         <iframe id="chart-frame" 
@@ -239,23 +267,64 @@
         </form>
     </div>
 
-    <!-- Display Transit Waveform Plot (hidden by default) -->
+    <!-- NO IFRAME: We'll show waveforms in a <div> -->
     <div class="container22" id="waveform-result-container" style="display: none;">
         <div id="waveform-result">
             <h3>Transit Waveform Plot</h3>
-            <!-- Changed from <img> to <iframe> for interactive Plotly HTML -->
-            <iframe 
-                id="waveform-frame" 
-                title="Transit Waveforms" 
-                style="width: 100%; height: 100svh; border: none; display: none;">
-            </iframe>
+            <!-- Waveforms go here -->
+            <div id="waveformsDiv" style="width:100%; height:600px; background:#222;"></div>
         </div>
     </div>
 
-    <!-- Leaflet for the map -->
+    <!-- Modal for single-date aspect snapshot & natal comparison -->
+<div id="snapshotModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999;">
+    <div id="snapshotContent" style="
+         background: #333; 
+         width: 90%;
+         height: 90%;
+         margin: 5% auto;
+         padding: 20px;
+         border-radius: 8px;
+         position: relative;
+         display: flex;
+         flex-direction: row;
+         gap: 20px;">
+      <button onclick="closeSnapshotModal()" style="position:absolute; top:10px; right:10px;">Close</button>
+  
+      <!-- LEFT: NATAl CHART IFRAME -->
+      <div style="flex:1; border:1px solid #ffdead;">
+        <h3 style="text-align:center; color:#ffdead;">Natal Chart</h3>
+        <iframe
+          id="natalComparisonFrame"
+          src=""
+          style="width:100%; height:100%; border:none;"
+        ></iframe>
+      </div>
+
+          <!-- MIDDLE: SYNASTRY CHART (NATAL vs. CLICKED DATE) -->
+    <div style="flex:1; border:1px solid #ffdead;">
+        <h3 style="text-align:center; color:#ffdead;">Natal <-> Clicked Date</h3>
+        <div id="synastryWheelDiv" style="width:100%; height:100%;"></div>
+      </div>
+  
+      <!-- RIGHT: NEW DATE CHART -->
+      <div style="flex:1; border:1px solid #ffdead;">
+        <h3 style="text-align:center; color:#ffdead;">Clicked Date Chart</h3>
+        <div id="aspectWheelDiv" style="width:100%; height:100%;"></div>
+      </div>
+  
+    </div>
+  </div>
+
+  
+  
+
+    <!-- Leaflet (for the map) -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Initialize map
+        // ------------------------------
+        // MAP initialization
+        // ------------------------------
         var map = L.map('map').setView([44.86833, 13.84806], 13);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USGS, NOAA',
@@ -269,26 +338,25 @@
             document.getElementById('lon').value = latlng.lng;
             marker.setLatLng(latlng);
         });
-    </script>
 
-    <script>
-        // =====================================
-        //  GLOBALS
-        // =====================================
-        window.calculatedNatalChart = null;
+        // --------------------------------------------------
+        // GLOBALS
+        // --------------------------------------------------
+        window.calculatedNatalChart = null;  // store natal chart object
+        window.lastTransits = [];            // store waveforms data for GPT analysis
 
-        // =====================================
-        //  NATAL FORM: CALCULATE CHART
-        // =====================================
+        // --------------------------------------------------
+        // NATAL FORM
+        // --------------------------------------------------
         document.getElementById('natal-form').addEventListener('submit', function(e) {
             e.preventDefault();
             let formData = new FormData(this);
             let data = Object.fromEntries(formData);
 
+            // Convert lat/lon to float if present
             if (data.lat) data.lat = parseFloat(data.lat);
             if (data.lon) data.lon = parseFloat(data.lon);
 
-            // NEW: Log user input before sending
             console.log("[NATAL FORM] Submitting data:", data);
 
             fetch("/calculate_natal_chart", {
@@ -301,9 +369,8 @@
                 let resultsDiv = document.getElementById('results');
                 resultsDiv.innerHTML = '';
                 if (data.success) {
-                    window.calculatedNatalChart = data.chart; // store globally
+                    window.calculatedNatalChart = data.chart;
 
-                    // Display the results
                     let html = '<h2>' + (data.chartName || 'Natal Celestial Alignments') + '</h2><ul>';
                     for (let body in data.chart) {
                         html += `<li><span>${body}:</span> ${data.chart[body]}</li>`;
@@ -311,16 +378,12 @@
                     html += '</ul>';
                     resultsDiv.innerHTML = html;
 
-                    // Auto-fill hidden input fields for plot
-                    populatePlanetaryPositions(data.chart);
-
-                    // Auto-fill natal chart JSON for waveforms
+                    populatePlanetaryPositions(window.calculatedNatalChart);
                     autoFillNatalChartData();
 
-                    // Show the forms for aspect plot & waveforms
+                    // Show the aspect-plot form & waveforms form
                     document.getElementById('plot-form-container').style.display = 'block';
                     document.getElementById('transit-form-container').style.display = 'block';
-
                 } else {
                     resultsDiv.innerHTML = `<p>Error: ${data.error}</p>`;
                 }
@@ -359,16 +422,15 @@
             natalChartInput.value = JSON.stringify(window.calculatedNatalChart);
         }
 
-        // =====================================
-        //  PLOT FORM: GENERATE ASPECT PLOT
-        // =====================================
+        // --------------------------------------------------
+        // ASPECT PLOT (NATAL)
+        // --------------------------------------------------
         document.getElementById('plot-form').addEventListener('submit', function(e) {
             e.preventDefault();
             generateAspectPlot();
         });
 
         function generateAspectPlot() {
-            // Collect planetary positions
             let positions = {};
             let fieldIds = {
                 'Jupiter': 'Jupiter_pos',
@@ -387,22 +449,13 @@
                 if (val) positions[planet] = val;
             }
 
-            // Collect checked aspects
-            let aspectList = ['Conjunction', 'Opposition', 'Trine', 'Square', 'Sextile'];
-            let selectedAspects = [];
-            for (let asp of aspectList) {
-                let cb = document.getElementById(asp);
-                if (cb && cb.checked) {
-                    selectedAspects.push(asp);
-                }
-            }
+            let aspectList = ['Conjunction','Opposition','Trine','Square','Sextile'];
+            let selectedAspects = aspectList.filter(a => {
+                let cb = document.getElementById(a);
+                return cb && cb.checked;
+            });
 
-            let data = {
-                positions: positions,
-                aspects: selectedAspects
-            };
-
-            // NEW: Log what we’re sending
+            let data = { positions, aspects: selectedAspects };
             console.log("[ASPECT PLOT] Payload to /generate_plot:", data);
 
             fetch("/generate_plot", {
@@ -413,12 +466,9 @@
             .then(res => res.json())
             .then(data => {
                 if (data.plot_url) {
-                    // Show the chart container
                     document.getElementById('chart-container').style.display = 'block';
-
-                    // Load the aspect plot into the iframe
                     let chartFrame = document.getElementById('chart-frame');
-                    chartFrame.src = data.plot_url;
+                    chartFrame.src = data.plot_url;  // original method for natal
                 } else {
                     alert('Error generating aspect plot: ' + data.error);
                 }
@@ -429,9 +479,9 @@
             });
         }
 
-        // =====================================
-        //  TRANSIT WAVEFORMS
-        // =====================================
+        // --------------------------------------------------
+        // TRANSIT WAVEFORMS (No Iframe)
+        // --------------------------------------------------
         document.getElementById('transit-form').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -440,7 +490,6 @@
             let natalChartData = window.calculatedNatalChart;
             let template = document.getElementById('plot-template').value;
 
-            // Additional logs for user checks
             console.log("[TRANSIT WAVEFORMS] Start date:", startDate);
             console.log("[TRANSIT WAVEFORMS] End date:", endDate);
 
@@ -456,7 +505,7 @@
                 document.querySelectorAll('input[name="transit_aspects"]:checked')
             ).map(cb => cb.value);
 
-            // Build payload
+            // Filter out only the natal planets we want
             let filteredNatalChartData = {};
             for (let planet of selectedNatalPlanets) {
                 if (natalChartData.hasOwnProperty(planet)) {
@@ -473,10 +522,9 @@
                 template: template
             };
 
-            // Log what we’re sending
-            console.log("[TRANSIT WAVEFORMS] Payload to /transit_waveforms:", payload);
+            console.log("[TRANSIT WAVEFORMS] Payload to /generate_waveforms_data:", payload);
 
-            fetch("/transit_waveforms", {
+            fetch("/generate_waveforms_data", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -486,22 +534,23 @@
                 console.log("[TRANSIT WAVEFORMS] Response:", data);
                 if (data.error) {
                     alert("Error: " + data.error);
-                } else if (data.plot_url) {
+                } else if (data.figure) {
                     document.getElementById('waveform-result-container').style.display = 'block';
-                    let waveFrame = document.getElementById('waveform-frame');
-                    waveFrame.src = data.plot_url;
-                    waveFrame.style.display = "block";
+                    // Plot the waveforms
+                    Plotly.newPlot("waveformsDiv", data.figure.data, data.figure.layout);
 
-                    // Transit details
-                    if (data.transits) {
-                        console.log("Transit Waveforms Data:");
-                        data.transits.forEach((t, i) => {
-                            console.log(
-                                `${i + 1}. [${t.date}] ${t.transiting_planet} ` +
-                                `${t.aspect} ${t.natal_planet} (intensity: ${t.intensity})`
-                            );
-                        });
-                    }
+                    // Attach click event to waveforms for single-date aspect
+                    let waveDiv = document.getElementById("waveformsDiv");
+                    waveDiv.on('plotly_click', function(evt){
+                        if(evt && evt.points && evt.points.length > 0) {
+                            let clickedDate = evt.points[0].x;
+                            console.log("Clicked date:", clickedDate);
+                            openSnapshotModal(clickedDate);
+                        }
+                    });
+
+                    // Save transits for optional GPT analysis
+                    window.lastTransits = data.transits || [];
                 } else {
                     alert("Unexpected response from server.");
                 }
@@ -511,6 +560,141 @@
                 alert("An error occurred while generating the waveforms. Please try again.");
             });
         });
+
+
+        function openSnapshotModal(dateStr) {
+  // 1) Show the modal
+  document.getElementById("snapshotModal").style.display = "block";
+
+  // 2) Left Column: natal iframe
+  const natalFrame = document.getElementById("natalComparisonFrame");
+  natalFrame.src = "/static/aspect_plot.html";
+
+  // 3) Right Column: fetch the single-date chart
+  fetch("/snapshot_aspect_chart_data", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: dateStr })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      alert("Error: " + data.error);
+    } else {
+      Plotly.newPlot("aspectWheelDiv", data.figure.data, data.figure.layout);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to load aspect chart for " + dateStr);
+  });
+
+  // 4) Middle Column: synergy chart (Natal↔Date).
+  //    We'll pass the user's natal text from window.calculatedNatalChart
+  //    plus the clicked date, plus chosen aspects to /synastry_aspect_chart_data
+  let selectedAspects = ["Conjunction","Opposition","Trine","Square","Sextile"]; 
+  // or read from checkboxes if you prefer
+
+  let synergyPayload = {
+    date: dateStr,
+    natal_chart_text: window.calculatedNatalChart, // the text from server
+    selected_aspects: selectedAspects
+  };
+
+  fetch("/synastry_aspect_chart_data", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(synergyPayload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.error) {
+      alert("Error: " + data.error);
+    } else {
+      // data.figure => synergy chart
+      Plotly.newPlot("synastryWheelDiv", data.figure.data, data.figure.layout);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to load synergy chart (Natal↔Date).");
+  });
+}
+
+
+        function closeSnapshotModal() {
+            document.getElementById("snapshotModal").style.display = "none";
+        }
+
+        // --------------------------------------------------
+        // GPT Analysis Buttons
+        // --------------------------------------------------
+        function analyzeTextInGPT() {
+            const text = "This is a sample text to analyze with GPT.";
+            fetch("/analyze_data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("[Browser] GPT analysis error:", data.error);
+                    alert("Error: " + data.error);
+                } else {
+                    console.log("[Browser] GPT analysis result:", data.analysis);
+                    alert("Check the browser console for GPT’s analysis result!\n" + data.analysis);
+                }
+            })
+            .catch(err => {
+                console.error("[Browser] fetch error:", err);
+                alert("Request failed. See console for error details.");
+            });
+        }
+
+        function analyzeWaveformsWithGPT() {
+            if (!window.lastTransits || window.lastTransits.length === 0) {
+                alert("No transits available! Generate waveforms first.");
+                return;
+            }
+            let summary = "Here are the calculated transits:\n\n";
+            window.lastTransits.forEach((t, i) => {
+                summary += `${i+1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
+                        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
+            });
+            summary += "\nPlease provide an insightful analysis of these transits.\n";
+
+            console.log("[Waveforms -> GPT] waveforms_text:", summary);
+            fetch("/analyze_waveforms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ waveforms_text: summary })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("[Browser] GPT waveforms analysis error:", data.error);
+                    alert("Error: " + data.error);
+                } else {
+                    console.log("[Browser] GPT waveforms analysis result:", data.analysis);
+                    alert("Check the console for GPT’s waveforms analysis!\n" + data.analysis);
+                }
+            })
+            .catch(err => {
+                console.error("[Browser] fetch error:", err);
+                alert("Request failed. See console for details.");
+            });
+        }
     </script>
+
+    <!-- GPT Analysis Buttons -->
+    <div class="container">
+        <h2>GPT Analysis</h2>
+        <!-- 1) Basic GPT Analysis of a Static String -->
+        <button onclick="analyzeTextInGPT()">Analyze Data with GPT (Simple)</button>
+
+        <!-- 2) GPT Analysis of the Actual Transit Waveforms -->
+        <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
+    </div>
 </body>
 </html>

@@ -8,3 +8,5 @@ NumPy
 Matplotlib
 datetime
 plotly
+openai
+dotenv

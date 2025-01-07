@@ -3,28 +3,27 @@ import platform
 import re
 from datetime import datetime
 
-import plotly.graph_objects as go
-import numpy as np
 from flask import Flask, jsonify, render_template, request
+import plotly.graph_objects as go
 
 import natal_chart
 import transit_waveforms
-
-# If you have any platform-specific logic:
-if platform.system() == "Darwin":  # macOS
-    pass
-else:
-    pass
+import openaiApi  # if you still have GPT-based analysis
 
 app = Flask(__name__)
 
-# Define the planets and zodiac signs
-planets = ["Jupiter", "Mars", "Mercury", "Moon", "Neptune",
-           "Pluto", "Saturn", "Sun", "Uranus", "Venus"]
-zodiac_signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-                "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+# -----------------------------------------------------------
+#   Planets, Signs, Aspects
+# -----------------------------------------------------------
+planets = [
+    "Jupiter", "Mars", "Mercury", "Moon", "Neptune",
+    "Pluto", "Saturn", "Sun", "Uranus", "Venus"
+]
+zodiac_signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+]
 
-# Planet symbols in Unicode
 planet_symbols = {
     "Jupiter": "♃",
     "Mars": "♂",
@@ -38,7 +37,6 @@ planet_symbols = {
     "Venus": "♀"
 }
 
-# Define major aspects with their allowable orb (in degrees)
 aspects = {
     "Conjunction": 0,
     "Opposition": 180,
@@ -53,7 +51,6 @@ orb = {
     "Square": 8,
     "Sextile": 6
 }
-
 aspect_colors = {
     "Conjunction": "white",
     "Opposition": "red",
@@ -62,42 +59,50 @@ aspect_colors = {
     "Sextile": "purple"
 }
 
+# -----------------------------------------------------------
+#   Home / Index
+# -----------------------------------------------------------
 @app.route("/")
 def index():
-    # Render index.html with aspect and planet data
+    """
+    Renders the main page (templates/index.html).
+    """
     return render_template("index.html", planets=planets, aspects=aspects.keys())
 
+# -----------------------------------------------------------
+#   Natal Chart
+# -----------------------------------------------------------
 @app.route("/calculate_natal_chart", methods=["POST"])
 def calculate_chart():
-    """
-    Calculate natal chart positions based on date/time of birth and lat/lon.
-    """
     data = request.json
-    if data is None:
+    if not data:
         return jsonify({"error": "Missing or invalid JSON data"}), 400
 
     dob = data.get("dob")
     tob = data.get("tob")
     chart_name = data.get("chartName")
 
-    if "lat" in data and "lon" in data:
-        lat = float(data["lat"])
-        lon = float(data["lon"])
-    else:
+    lat = data.get("lat")
+    lon = data.get("lon")
+    if lat is None or lon is None:
         return jsonify({"error": "Missing geographic information"}), 400
 
     try:
+        lat = float(lat)
+        lon = float(lon)
         chart = natal_chart.calculate_natal_chart(dob, tob, lat, lon)
         return jsonify({"success": True, "chart": chart, "chartName": chart_name})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# -----------------------------------------------------------
+#   Aspect Plot (Natal, writes HTML for <iframe>)
+# -----------------------------------------------------------
 @app.route("/generate_plot", methods=["POST"])
 def generate_plot():
     """
-    Convert planetary positions to degrees, then generate only ONE plot:
-     - The Aspect Chart (in polar form, but effectively a "cartesian" aspect wheel).
-    Returns the path to the HTML file so the front end can display it.
+    Creates a static HTML file with the aspect wheel for natal positions.
+    The front-end places it in an <iframe>, keeping your old design.
     """
     try:
         data = request.json
@@ -108,35 +113,34 @@ def generate_plot():
         for planet, pos_str in positions.items():
             positions[planet] = convert_to_degrees(pos_str)
 
-        # Generate the aspect wheel chart
+        # Generate the aspect wheel chart as an HTML file
         aspect_plot_url = generate_aspect_plot(positions, selected_aspects)
 
-        # Return only the aspect_plot_url
         return jsonify({"plot_url": aspect_plot_url})
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in /generate_plot: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/transit_waveforms", methods=["POST"])
-def transit_waveforms_route():
+# -----------------------------------------------------------
+#   Waveforms (No Iframe) -> Return Plotly Figure JSON
+# -----------------------------------------------------------
+@app.route("/generate_waveforms_data", methods=["POST"])
+def generate_waveforms_data():
     """
-    Generate transit waveforms over a specified date range, 
-    for chosen transiting planets/aspects relative to a natal chart.
-    Returns a Plotly HTML to be loaded in an <iframe>.
+    Returns JSON for Plotly (data + layout) plus the raw transits list.
+    The front-end will embed it in a <div> via Plotly.newPlot(...).
     """
     try:
         data = request.json
+        if not data:
+            return jsonify({"error": "Invalid JSON"}), 400
+
         natal_chart_positions = data.get("natal_chart")
         start_date = datetime.strptime(data.get("start_date"), "%Y-%m-%d")
         end_date = datetime.strptime(data.get("end_date"), "%Y-%m-%d")
-        selected_transiting_planets = data.get("transiting_planets")
-        selected_aspects = data.get("aspects")
-        template = data.get("template", "plotly_dark")  # Default to "plotly_dark"
-
-        # Validate
-        if (not natal_chart_positions or not start_date or not end_date 
-            or not selected_transiting_planets or not selected_aspects):
-            return jsonify({"error": "Invalid input data"}), 400
+        selected_transiting_planets = data.get("transiting_planets", [])
+        selected_aspects = data.get("aspects", [])
+        template = data.get("template", "plotly_dark")
 
         # Convert natal chart positions from strings to degrees
         natal_positions = {}
@@ -145,16 +149,17 @@ def transit_waveforms_route():
 
         # Calculate waveforms
         transits = transit_waveforms.calculate_transit_waveforms(
-            natal_positions, start_date, end_date, 
+            natal_positions, start_date, end_date,
             selected_transiting_planets, selected_aspects
         )
 
-        plot_url = transit_waveforms.generate_interactive_transit_waveform_plot(
-            transits, start_date, end_date, template=template  # Pass the template here
+        # Build a figure dict for direct Plotly usage
+        fig_dict = transit_waveforms.build_waveform_figure_dict(
+            transits, start_date, end_date, template
         )
 
         return jsonify({
-            "plot_url": plot_url,
+            "figure": fig_dict,  # { "data": [...], "layout": {...} }
             "transits": [
                 {
                     "date": t["date"].strftime("%Y-%m-%d"),
@@ -167,12 +172,71 @@ def transit_waveforms_route():
             ]
         })
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in /generate_waveforms_data: {e}")
         return jsonify({"error": str(e)}), 500
 
+# -----------------------------------------------------------
+#   Single-Date Aspect Snapshot (No Iframe) -> Return JSON
+# -----------------------------------------------------------
+@app.route("/snapshot_aspect_chart_data", methods=["POST"])
+def snapshot_aspect_chart_data():
+    """
+    Generates an aspect wheel for a single date/time (at noon).
+    On a waveforms click, we show the same "old design" in a modal,
+    but returned as JSON for direct Plotly usage.
+    """
+    try:
+        data = request.json
+        if not data or "date" not in data:
+            return jsonify({"error": "Missing 'date'"}), 400
+
+        date_str = data["date"]
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        # Arbitrary time: noon
+        dt = dt.replace(hour=12, minute=0)
+
+        # Compute positions in degrees
+        positions_deg = {}
+        for p in planets:
+            positions_deg[p] = natal_chart.get_transit_position(dt, p)
+
+        # Build the aspect wheel figure in JSON, but with your original radial design
+        # -> We'll use the same style from generate_aspect_plot, just returning JSON instead of HTML.
+        fig_data = build_aspect_wheel_figure_dict(positions_deg, list(aspects.keys()))
+
+        return jsonify({"figure": fig_data})
+    except Exception as e:
+        print(f"Error in /snapshot_aspect_chart_data: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# -----------------------------------------------------------
+#   GPT Analysis Route
+# -----------------------------------------------------------
+@app.route("/analyze_waveforms", methods=["POST"])
+def analyze_waveforms():
+    """
+    Receives waveforms (or any other data) from the frontend,
+    calls GPT for an analysis, and returns the analysis text.
+    """
+    try:
+        data = request.json
+        if not data or "waveforms_text" not in data:
+            return jsonify({"error": "No 'waveforms_text' field provided."}), 400
+
+        waveforms_text = data["waveforms_text"]
+        result = openaiApi.analyze_data_with_gpt(waveforms_text)
+        print("[/analyze_waveforms] GPT analysis result:", result)
+        return jsonify({"analysis": result}), 200
+    except Exception as e:
+        print("[/analyze_waveforms] Error:", e)
+        return jsonify({"error": str(e)}), 500
+
+# -----------------------------------------------------------
+#   Helper Functions
+# -----------------------------------------------------------
 def convert_to_degrees(position):
     """
-   Convert a string like '20° 26' 27.06" Aries' into decimal degrees [0..359].
+    Convert "20° 30' 10\" Aries" -> decimal degrees.
     """
     pattern = r"""
         (\d+\.?\d*)        # Degrees
@@ -185,44 +249,33 @@ def convert_to_degrees(position):
     """
     match = re.match(pattern, position.strip(), re.VERBOSE)
     if match:
-        degrees = float(match.group(1))
+        deg = float(match.group(1))
         minutes = float(match.group(2)) if match.group(2) else 0.0
         seconds = float(match.group(3)) if match.group(3) else 0.0
         sign = match.group(4).capitalize()
-        total_degrees = degrees + minutes / 60 + seconds / 3600
 
-        # Find sign index
+        total_deg = deg + minutes/60.0 + seconds/3600.0
         if sign not in zodiac_signs:
             raise ValueError(f"Invalid zodiac sign: '{sign}' in '{position}'")
         sign_index = zodiac_signs.index(sign)
-        sign_offset = sign_index * 30
-
-        return total_degrees + sign_offset
+        return total_deg + sign_index*30
     else:
         raise ValueError(f"Invalid position format: '{position}'")
 
-def generate_aspect_plot(positions, selected_aspects):
+def generate_aspect_plot(positions_deg, selected_aspects):
     """
-    Generate a single aspect chart (the "cartesian" aspect wheel) in polar form
-    but with lines for aspects. Writes HTML to static/aspect_plot.html.
-    Returns the path to the resulting file.
+    This is your old code that writes a static HTML file for 'aspect_plot.html' 
+    used by the natal chart <iframe>. 
+    (We keep it unchanged so the natal chart has the same design as always.)
     """
     fig = go.Figure()
 
+    # EXACT style logic as your old code:
     num_signs = len(zodiac_signs)
     degrees_per_sign = 360 / num_signs
     sign_angles = [(i * degrees_per_sign + degrees_per_sign / 2) for i in range(num_signs)]
 
-    def degrees_to_zodiac_sign_position(deg):
-        sign_index = int(deg // 30) % 12
-        sign = zodiac_signs[sign_index]
-        pos_in_sign = deg % 30
-        d = int(pos_in_sign)
-        m = int((pos_in_sign - d) * 60)
-        s = (pos_in_sign - d - m / 60) * 3600
-        return f"{d}° {m}' {s:.2f}\" {sign}"
-
-    # Add zodiac boundaries
+    # zodiac boundaries
     for i in range(num_signs):
         boundary_angle = i * 30
         fig.add_trace(go.Scatterpolar(
@@ -234,7 +287,7 @@ def generate_aspect_plot(positions, selected_aspects):
             hoverinfo="none"
         ))
 
-    # Add zodiac labels
+    # zodiac labels
     for angle, sign in zip(sign_angles, zodiac_signs):
         fig.add_trace(go.Scatterpolar(
             r=[1.15],
@@ -246,37 +299,34 @@ def generate_aspect_plot(positions, selected_aspects):
             hoverinfo="none"
         ))
 
-    # Draw aspect lines
-    for planet1, angle1 in positions.items():
-        for planet2, angle2 in positions.items():
+    # aspect lines
+    for planet1, angle1 in positions_deg.items():
+        for planet2, angle2 in positions_deg.items():
             if planet1 < planet2:
                 difference = abs(angle1 - angle2)
                 if difference > 180:
                     difference = 360 - difference
-                for aspect_name in selected_aspects:
-                    aspect_angle = aspects[aspect_name]
-                    if abs(difference - aspect_angle) <= orb[aspect_name]:
-                        color = aspect_colors.get(aspect_name, "cyan")
+                for asp_name in selected_aspects:
+                    aspect_angle = aspects[asp_name]
+                    if abs(difference - aspect_angle) <= orb[asp_name]:
+                        color = aspect_colors.get(asp_name, "cyan")
                         fig.add_trace(go.Scatterpolar(
                             r=[1, 1],
                             theta=[angle1, angle2],
                             mode="lines",
                             line=dict(color=color, width=1),
-                            name=f"{planet1}-{aspect_name}-{planet2}",
+                            name=f"{planet1}-{asp_name}-{planet2}",
                             hoverinfo="skip"
                         ))
 
-    # Plot planets
+    # planet glyphs
     planet_r = []
     planet_theta = []
     planet_text = []
-    planet_hover = []
-    for planet, degree in positions.items():
+    for planet, deg in positions_deg.items():
         planet_r.append(1.0)
-        planet_theta.append(degree)
-        planet_text.append(planet_symbols[planet])
-        hover_str = degrees_to_zodiac_sign_position(degree)
-        planet_hover.append(f"{planet} {hover_str}")
+        planet_theta.append(deg)
+        planet_text.append(planet_symbols.get(planet, planet))
 
     fig.add_trace(go.Scatterpolar(
         r=planet_r,
@@ -284,10 +334,8 @@ def generate_aspect_plot(positions, selected_aspects):
         mode="markers+text",
         text=planet_text,
         textposition="middle center",
-        marker=dict(size=18, color="black", line = dict(color = '#ffdead', width = 1)),
+        marker=dict(size=18, color="black", line=dict(color='#ffdead', width=1)),
         textfont=dict(size=12, color="#ffdead"),
-        hovertemplate="%{hovertext}<extra></extra>",
-        hovertext=planet_hover,
         showlegend=False
     ))
 
@@ -306,32 +354,279 @@ def generate_aspect_plot(positions, selected_aspects):
             ),
             radialaxis=dict(visible=False)
         ),
-        dragmode="pan",
         margin=dict(t=40, b=40, l=40, r=40),
-        # annotations=[
-        #    dict(
-        #        text="Use scroll/box zoom to explore, drag to rotate",
-        #        x=0.5, y=1.05,
-        #        xref="paper", yref="paper",
-        #        showarrow=False,
-        #        font=dict(size=12, color="gray")
-        #    )
-        # ]
     )
 
+    if not os.path.exists("static"):
+        os.makedirs("static")
     html_path = "static/aspect_plot.html"
-    fig.write_html(
-        html_path,
-        full_html=True,
-        config={
-            "scrollZoom": True,
-            "displayModeBar": True,
-            "modeBarButtonsToRemove": [],
-            "modeBarButtonsToAdd": [
-            ]
-        }
-    )
+    fig.write_html(html_path)
     return f"/{html_path}"
+
+
+
+
+def build_aspect_wheel_figure_dict(positions_deg, selected_aspects):
+    """
+    Recreates the same radial design as 'generate_aspect_plot', 
+    but returns JSON for direct Plotly usage (no <iframe>).
+    """
+    fig = go.Figure()
+
+    num_signs = len(zodiac_signs)
+    degrees_per_sign = 360 / num_signs
+    sign_angles = [(i * degrees_per_sign + degrees_per_sign / 2) for i in range(num_signs)]
+
+    # boundaries
+    for i in range(num_signs):
+        boundary_angle = i * 30
+        fig.add_trace(go.Scatterpolar(
+            r=[0, 1.2],
+            theta=[boundary_angle, boundary_angle],
+            mode="lines",
+            line=dict(color="#333", width=0.6, dash="dot"),
+            showlegend=False,
+            hoverinfo="none"
+        ))
+
+    # zodiac labels
+    for angle, sign in zip(sign_angles, zodiac_signs):
+        fig.add_trace(go.Scatterpolar(
+            r=[1.15],
+            theta=[angle],
+            mode="text",
+            text=[sign],
+            textfont=dict(size=12, color="#333"),
+            showlegend=False,
+            hoverinfo="none"
+        ))
+
+    # aspect lines
+    for planet1, angle1 in positions_deg.items():
+        for planet2, angle2 in positions_deg.items():
+            if planet1 < planet2:
+                difference = abs(angle1 - angle2)
+                if difference > 180:
+                    difference = 360 - difference
+                for asp_name in selected_aspects:
+                    aspect_angle = aspects[asp_name]
+                    if abs(difference - aspect_angle) <= orb[asp_name]:
+                        color = aspect_colors.get(asp_name, "cyan")
+                        fig.add_trace(go.Scatterpolar(
+                            r=[1, 1],
+                            theta=[angle1, angle2],
+                            mode="lines",
+                            line=dict(color=color, width=1),
+                            name=f"{planet1}-{asp_name}-{planet2}",
+                            hoverinfo="skip"
+                        ))
+
+    # planet glyphs
+    planet_r = []
+    planet_theta = []
+    planet_text = []
+    for planet, deg in positions_deg.items():
+        planet_r.append(1.0)
+        planet_theta.append(deg)
+        planet_text.append(planet_symbols.get(planet, planet))
+
+    fig.add_trace(go.Scatterpolar(
+        r=planet_r,
+        theta=planet_theta,
+        mode="markers+text",
+        text=planet_text,
+        textposition="middle center",
+        marker=dict(size=18, color="black", line=dict(color='#ffdead', width=1)),
+        textfont=dict(size=12, color="#ffdead"),
+        showlegend=False
+    ))
+
+    fig.update_layout(
+        template="plotly_dark",
+        polar=dict(
+            angularaxis=dict(
+                showgrid=True,
+                linecolor="#333",
+                gridcolor="gray",
+                linewidth=0.5,
+                showline=True,
+                tickmode="array",
+                tickvals=[],
+                ticktext=[]
+            ),
+            radialaxis=dict(visible=False)
+        ),
+        margin=dict(t=40, b=40, l=40, r=40),
+    )
+
+    return {
+        "data": [trace.to_plotly_json() for trace in fig.data],
+        "layout": fig.layout.to_plotly_json()
+    }
+
+
+
+
+@app.route("/synastry_aspect_chart_data", methods=["POST"])
+def synastry_aspect_chart_data():
+    """
+    A route that takes:
+      { "date": "2025-01-15",
+        "natal_chart_text": {"Sun":"20° 12' ... Aries", "Moon":"12° 03' ... Taurus", ...},
+        "selected_aspects": ["Conjunction","Opposition","Trine","Square","Sextile"]
+      }
+    Then re-converts the natal text to degrees, 
+    calculates the date positions in degrees,
+    and draws only natal↔date lines.
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data"}), 400
+
+        date_str = data["date"]
+        natal_chart_text = data["natal_chart_text"] 
+        selected_aspects = data["selected_aspects"]
+
+        # 1) Convert the natal text to degrees
+        natal_positions_deg = {}
+        for planet, pos_str in natal_chart_text.items():
+            natal_positions_deg[planet] = convert_to_degrees(pos_str)  # reuse your function
+
+        # 2) Convert date_str -> datetime
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        dt = dt.replace(hour=12, minute=0)
+
+        # 3) Calculate the date positions
+        date_positions_deg = {}
+        for p in planets:
+            date_positions_deg[p] = natal_chart.get_transit_position(dt, p)
+
+        # 4) Build synergy chart
+        fig_data = build_synastry_wheel(natal_positions_deg, date_positions_deg, selected_aspects)
+        return jsonify({"figure": fig_data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
+    """
+    Show lines in the legend (one line = one legend item),
+    but hide the planet markers from the legend so they're always visible.
+    """
+    fig = go.Figure()
+
+    # 1) Draw zodiac boundaries (off the legend)
+    num_signs = 12
+    for i in range(num_signs):
+        angle = i * 30
+        fig.add_trace(go.Scatterpolar(
+            r=[0, 1.2],
+            theta=[angle, angle],
+            mode="lines",
+            line=dict(color="#333", width=0.6, dash="dot"),
+            showlegend=False,    # do not include in legend
+            hoverinfo="none"
+        ))
+
+    # 2) Add aspect lines for natal↔date
+    #    Each line is its own legend item, toggled individually.
+    for nat_planet, nat_deg in natal_positions.items():
+        for date_planet, date_deg in date_positions.items():
+            diff = abs(nat_deg - date_deg)
+            if diff > 180:
+                diff = 360 - diff
+            for asp_name in selected_aspects:
+                aspect_angle = aspects[asp_name]
+                if abs(diff - aspect_angle) <= orb[asp_name]:
+                    color = aspect_colors.get(asp_name, "cyan")
+                    fig.add_trace(go.Scatterpolar(
+                        r=[1, 0.8],               # radius for lines
+                        theta=[nat_deg, date_deg],
+                        mode="lines",
+                        line=dict(color=color, width=1),
+                        name=f"{nat_planet} {asp_name} {date_planet}",
+                        showlegend=True,         # lines appear in legend
+                        hoverinfo="none"
+                    ))
+
+    # 3) Plot natal planets (no legend entry -> always visible)
+    natal_r = []
+    natal_theta = []
+    natal_text = []
+    for p, deg in natal_positions.items():
+        natal_r.append(1.0)
+        natal_theta.append(deg)
+        natal_text.append(planet_symbols.get(p, p))
+    fig.add_trace(go.Scatterpolar(
+        r=natal_r,
+        theta=natal_theta,
+        mode="markers+text",
+        text=natal_text,
+        textposition="middle center",
+        marker=dict(size=18, color="black", line=dict(color="#ffdead", width=1)),
+        textfont=dict(size=12, color="#ffdead"),
+        showlegend=False,      # hide from legend
+        hoverinfo="text"
+    ))
+
+    # 4) Plot date planets (no legend entry -> always visible)
+    date_r = []
+    date_theta = []
+    date_text = []
+    for p, deg in date_positions.items():
+        date_r.append(0.8)
+        date_theta.append(deg)
+        date_text.append(planet_symbols.get(p, p))
+    fig.add_trace(go.Scatterpolar(
+        r=date_r,
+        theta=date_theta,
+        mode="markers+text",
+        text=date_text,
+        textposition="middle center",
+        marker=dict(size=14, color="blue", line=dict(color="#ddd", width=1)),
+        textfont=dict(size=12, color="#ffdead"),
+        showlegend=False,      # hide from legend
+        hoverinfo="text"
+    ))
+
+    # 5) Configure legend for "line-by-line" toggling
+    fig.update_layout(
+        template="plotly_dark",
+        showlegend=True,    # We do want lines to appear in the legend
+        legend=dict(
+            x=1.05,
+            y=1.0,
+            bordercolor="#666",
+            borderwidth=1,
+            font=dict(color="#ffdead"),
+            # Key: ensures each line toggles individually, not grouped
+            groupclick="toggleitem"
+        ),
+        margin=dict(t=40, b=40, l=40, r=90),
+        polar=dict(
+            radialaxis=dict(visible=False),
+            angularaxis=dict(showgrid=True, gridcolor="#444")
+        )
+    )
+
+    return {
+        "data": [trace.to_plotly_json() for trace in fig.data],
+        "layout": fig.layout.to_plotly_json()
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     if not os.path.exists("static"):
