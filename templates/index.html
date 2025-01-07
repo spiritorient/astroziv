@@ -146,11 +146,11 @@
             </div>
             <div class="form-group">
                 <label for="lat">Latitude:</label>
-                <input type="text" id="lat" name="lat" placeholder="e.g., 44.86833" readonly>
+                <input type="text" id="lat" name="lat" placeholder="e.g., 51.5014" readonly>
             </div>
             <div class="form-group">
                 <label for="lon">Longitude:</label>
-                <input type="text" id="lon" name="lon" placeholder="e.g., 13.84806" readonly>
+                <input type="text" id="lon" name="lon" placeholder="e.g., -0.1593" readonly>
             </div>
             <div class="form-group">
                 <button type="submit">Compute Celestial Alignments</button>
@@ -325,12 +325,12 @@
         // ------------------------------
         // MAP initialization
         // ------------------------------
-        var map = L.map('map').setView([44.86833, 13.84806], 13);
+        var map = L.map('map').setView([51.5014, -0.1593], 13);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USGS, NOAA',
             maxZoom: 18
         }).addTo(map);
-        var marker = L.marker([44.86833, 13.84806]).addTo(map);
+        var marker = L.marker([51.5014, -0.1593]).addTo(map);
 
         map.on('click', function (e) {
             var latlng = e.latlng;
