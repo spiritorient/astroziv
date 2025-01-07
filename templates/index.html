@@ -652,27 +652,39 @@
             });
         }
 
-        async function analyzeWaveforms() {
-            const waveformsText = "Sample waveform text for GPT analysis."; // Replace with dynamic content if needed
-            const responseContainer = document.getElementById("response");
-            responseContainer.textContent = ""; // Clear previous content
+        function analyzeWaveformsWithGPT() {
+            if (!window.lastTransits || window.lastTransits.length === 0) {
+                alert("No transits available! Generate waveforms first.");
+                return;
+            }
+            let summary = "Here are the calculated transits:\n\n";
+            window.lastTransits.forEach((t, i) => {
+                summary += `${i+1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
+                        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
+            });
+            summary += "\nPlease provide an insightful analysis of these transits.\n";
 
-            const response = await fetch("/analyze_waveforms", {
+            console.log("[Waveforms -> GPT] waveforms_text:", summary);
+            fetch("/analyze_waveforms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ waveforms_text: waveformsText })
+                body: JSON.stringify({ waveforms_text: summary })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("[Browser] GPT waveforms analysis error:", data.error);
+                    alert("Error: " + data.error);
+                } else {
+                    console.log("[Browser] GPT waveforms analysis result:", data.analysis);
+                    alert("Check the console for GPT’s waveforms analysis!\n" + data.analysis);
+                }
+            })
+            .catch(err => {
+                console.error("[Browser] fetch error:", err);
+                alert("Request failed. See console for details.");
             });
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                responseContainer.textContent += decoder.decode(value, { stream: true });
-            }
         }
-        
     </script>
 
     <!-- GPT Analysis Buttons -->
