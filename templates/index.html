@@ -653,38 +653,53 @@
         }
 
         function analyzeWaveformsWithGPT() {
-            if (!window.lastTransits || window.lastTransits.length === 0) {
-                alert("No transits available! Generate waveforms first.");
-                return;
-            }
-            let summary = "Here are the calculated transits:\n\n";
-            window.lastTransits.forEach((t, i) => {
-                summary += `${i+1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
-                        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
-            });
-            summary += "\nPlease provide an insightful analysis of these transits.\n";
+    if (!window.lastTransits || window.lastTransits.length === 0) {
+        alert("No transits available! Generate waveforms first.");
+        return;
+    }
 
-            console.log("[Waveforms -> GPT] waveforms_text:", summary);
-            fetch("/analyze_waveforms", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ waveforms_text: summary })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    console.error("[Browser] GPT waveforms analysis error:", data.error);
-                    alert("Error: " + data.error);
-                } else {
-                    console.log("[Browser] GPT waveforms analysis result:", data.analysis);
-                    alert("Check the console for GPT’s waveforms analysis!\n" + data.analysis);
-                }
-            })
-            .catch(err => {
-                console.error("[Browser] fetch error:", err);
-                alert("Request failed. See console for details.");
-            });
-        }
+    let summary = "Here are the calculated transits:\n\n";
+    window.lastTransits.forEach((t, i) => {
+        summary += `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
+            + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
+    });
+    summary += "\nPlease provide an insightful analysis of these transits.\n";
+
+    console.log("[Waveforms -> GPT] waveforms_text:", summary);
+
+    const resultContainer = document.getElementById("results");
+    resultContainer.innerHTML = ""; // Clear previous content
+
+    fetch("/analyze_waveforms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waveforms_text: summary })
+    })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            function readStream() {
+                reader.read().then(({ done, value }) => {
+                    if (done) return; // End of stream
+                    const chunk = decoder.decode(value, { stream: true });
+                    resultContainer.innerHTML += chunk; // Append streamed content
+                    readStream(); // Continue reading
+                });
+            }
+
+            readStream();
+        })
+        .catch(err => {
+            console.error("Streaming error:", err);
+            resultContainer.innerHTML = `<p>An error occurred: ${err.message}</p>`;
+        });
+}
+
+        
     </script>
 
     <!-- GPT Analysis Buttons -->

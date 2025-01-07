@@ -213,21 +213,26 @@ def snapshot_aspect_chart_data():
 #   GPT Analysis Route
 # -----------------------------------------------------------
 
+from flask import Response
+
 @app.route("/analyze_waveforms", methods=["POST"])
 def analyze_waveforms():
+    """
+    Stream GPT response for analyzing waveforms.
+    """
     try:
         data = request.json
         if not data or "waveforms_text" not in data:
             return jsonify({"error": "No 'waveforms_text' field provided."}), 400
 
         waveforms_text = data["waveforms_text"]
-        result = openaiApi.analyze_data_with_gpt(waveforms_text)
 
-        # Ensure the result is a string
-        if isinstance(result, str):
-            return jsonify({"analysis": result}), 200
-        else:
-            return jsonify({"error": "Unexpected GPT response format."}), 500
+        # Use Flask's Response to stream content
+        def generate_stream():
+            for chunk in openaiApi.analyze_data_with_gpt_stream(waveforms_text):
+                yield chunk
+
+        return Response(generate_stream(), content_type="text/plain")
     except Exception as e:
         print("Error in /analyze_waveforms:", e)
         return jsonify({"error": str(e)}), 500
