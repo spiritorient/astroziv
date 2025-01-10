@@ -279,6 +279,17 @@
             <!-- Waveforms go here -->
             <div id="waveformsDiv" style="width:100%; height:600px; background:#222;"></div>
         </div>
+        <div class="container">
+            <h2>GPT Analysis</h2>
+            <!-- GPT analysis will be displayed here -->
+            <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
+            <div id="gpt-analysis-result" style="margin-top: 20px; padding: 10px; background-color: #333; color: #ffdead; border: 1px solid #ffdead; border-radius: 8px; display: none;">
+                 <br>
+                 <a href="https://x.com/ASTROZIV">X · #ASTRZ</a>
+                 <a href="https://t.me/astroziv_community">X · COMMUNITY</a>
+            </div>
+        </div>
+        
     </div>
 
     <!-- Modal for single-date aspect snapshot & natal comparison -->
@@ -664,7 +675,7 @@
             }
             let summary = "Here are the calculated transits:\n\n";
             window.lastTransits.forEach((t, i) => {
-                summary += `${i+1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
+                summary += `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
                         + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
             });
             summary += "\nPlease provide an insightful analysis of these transits.\n";
@@ -682,7 +693,11 @@
                     alert("Error: " + data.error);
                 } else {
                     console.log("[Browser] GPT waveforms analysis result:", data.analysis);
-                    alert("Check the console for GPT’s waveforms analysis!\n" + data.analysis);
+
+                    // Display the result in the div
+                    const resultDiv = document.getElementById("gpt-analysis-result");
+                    resultDiv.style.display = "block"; // Show the div
+                    resultDiv.innerHTML = `<h3>GPT Analysis Result:</h3><p>${data.analysis}</p>`;
                 }
             })
             .catch(err => {
@@ -694,12 +709,88 @@
 
     <!-- GPT Analysis Buttons -->
     <div class="container">
-        <h2>GPT Analysis</h2>
+        <title>User Notes</title>
+									<style>
+										.note-container {
+											margin: 20px;
+											max-width: 600px;
+										}
+										textarea {
+											width: 100%;
+											height: 150px;
+											padding: 10px;
+											font-size: 14px;
+											border: 1px solid #ccc;
+											border-radius: 4px;
+											margin-bottom: 10px;
+										}
+										button {
+											background-color: #28a7460e;
+											color: white;
+											border: none;
+											border-radius: 4px;
+											cursor: pointer;
+											margin-bottom: 10px;
+										}
+										button:hover {
+											background-color: #07220d0e;
+										}
+									</style>
+								<br>
+								<div class="note-container">
+									<h2>Take Your Notes</h2>
+									<textarea id="userNote" placeholder="Write your notes here..."></textarea>
+									<button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
+									<button id="clearNoteButton">Clear Note</button>
+									<br><br>
+									<h3>Saved Note</h3>
+									<div id="savedNoteDisplay" style="background-color: #07220d0e; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+										No notes saved yet.
+									</div>
+								</div>
+								
+								<script>
+									// Function to load saved note from local storage
+									function loadNote() {
+										const savedNote = localStorage.getItem('userNote');
+										const savedNoteDisplay = document.getElementById('savedNoteDisplay');
+										if (savedNote) {
+											// Replace newlines with <br> tags for display
+											savedNoteDisplay.innerHTML = savedNote.replace(/\n/g, '<br>');
+										} else {
+											savedNoteDisplay.innerHTML = "No notes saved yet.";
+										}
+									}
+								
+									// Function to save note to local storage
+									document.getElementById('saveNoteButton').addEventListener('click', function() {
+										const userNote = document.getElementById('userNote').value;
+										if (userNote.trim()) {
+											localStorage.setItem('userNote', userNote);
+											loadNote(); // Refresh the saved note display
+											alert('Note saved successfully!');
+										} else {
+											alert('Please enter a note before saving.');
+										}
+									});
+								
+									// Function to clear note from local storage
+									document.getElementById('clearNoteButton').addEventListener('click', function() {
+										localStorage.removeItem('userNote');
+										loadNote(); // Refresh the saved note display
+										alert('Note cleared successfully!');
+									});
+								
+									// Load the saved note on page load
+									window.onload = function() {
+										loadNote();
+									};
+								</script>
         <!-- 1) Basic GPT Analysis of a Static String 
         <button onclick="analyzeTextInGPT()">Analyze Data with GPT (Simple)</button> -->
 
-        <!-- 2) GPT Analysis of the Actual Transit Waveforms -->
-        <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
+        <!-- 2) GPT Analysis of the Actual Transit Waveforms
+        <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button> -->
     </div>
 </body>
 </html>

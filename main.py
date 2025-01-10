@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 
 import natal_chart
 import transit_waveforms
-import openaiApi  # if you still have GPT-based analysis
+import openaiApi #gpt implemented
 
 app = Flask(__name__)
 
@@ -615,18 +615,6 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
         "data": [trace.to_plotly_json() for trace in fig.data],
         "layout": fig.layout.to_plotly_json()
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     if not os.path.exists("static"):
