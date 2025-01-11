@@ -129,7 +129,7 @@
 <body>
     <div class="container">
         <br><h5 style="color: #ffdead">2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump</h5>
-        <a href="https://youtube.com/live/7kaDdLrPTAY?feature=share">Youtube LIVE Stream</a><br><br>
+        <a href="https://youtube.com/live/WUdik02MLto?feature=share">Youtube LIVE Stream</a><br><br>
         <a href="https://x.com/ASTROZIV/status/1877379928330490076">User Manual</a><br>
     </div>
     <!-- Natal Chart Calculation Form -->
@@ -579,63 +579,63 @@
 
 
         function openSnapshotModal(dateStr) {
-  // 1) Show the modal
-  document.getElementById("snapshotModal").style.display = "block";
+            // 1) Show the modal
+            document.getElementById("snapshotModal").style.display = "block";
 
-  // 2) Left Column: natal iframe
-  const natalFrame = document.getElementById("natalComparisonFrame");
-  natalFrame.src = "/static/aspect_plot.html";
+            // 2) Left Column: natal iframe
+            const natalFrame = document.getElementById("natalComparisonFrame");
+            natalFrame.src = "/static/aspect_plot.html";
 
-  // 3) Right Column: fetch the single-date chart
-  fetch("/snapshot_aspect_chart_data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ date: dateStr })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.error) {
-      alert("Error: " + data.error);
-    } else {
-      Plotly.newPlot("aspectWheelDiv", data.figure.data, data.figure.layout);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load aspect chart for " + dateStr);
-  });
+            // 3) Right Column: fetch the single-date chart
+            fetch("/snapshot_aspect_chart_data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date: dateStr })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                alert("Error: " + data.error);
+                } else {
+                Plotly.newPlot("aspectWheelDiv", data.figure.data, data.figure.layout);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to load aspect chart for " + dateStr);
+            });
 
-  // 4) Middle Column: synergy chart (Natal↔Date).
-  //    We'll pass the user's natal text from window.calculatedNatalChart
-  //    plus the clicked date, plus chosen aspects to /synastry_aspect_chart_data
-  let selectedAspects = ["Conjunction","Opposition","Trine","Square","Sextile"]; 
-  // or read from checkboxes if you prefer
+            // 4) Middle Column: synergy chart (Natal↔Date).
+            //    We'll pass the user's natal text from window.calculatedNatalChart
+            //    plus the clicked date, plus chosen aspects to /synastry_aspect_chart_data
+            let selectedAspects = ["Conjunction","Opposition","Trine","Square","Sextile"]; 
+            // or read from checkboxes if you prefer
 
-  let synergyPayload = {
-    date: dateStr,
-    natal_chart_text: window.calculatedNatalChart, // the text from server
-    selected_aspects: selectedAspects
-  };
+            let synergyPayload = {
+                date: dateStr,
+                natal_chart_text: window.calculatedNatalChart, // the text from server
+                selected_aspects: selectedAspects
+            };
 
-  fetch("/synastry_aspect_chart_data", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(synergyPayload)
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.error) {
-      alert("Error: " + data.error);
-    } else {
-      // data.figure => synergy chart
-      Plotly.newPlot("synastryWheelDiv", data.figure.data, data.figure.layout);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load synergy chart (Natal↔Date).");
-  });
-}
+            fetch("/synastry_aspect_chart_data", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(synergyPayload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.error) {
+                alert("Error: " + data.error);
+                } else {
+                // data.figure => synergy chart
+                Plotly.newPlot("synastryWheelDiv", data.figure.data, data.figure.layout);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to load synergy chart (Natal↔Date).");
+            });
+            }
 
 
         function closeSnapshotModal() {
@@ -710,82 +710,82 @@
     <!-- GPT Analysis Buttons -->
     <div class="container">
         <title>User Notes</title>
-									<style>
-										.note-container {
-											margin: 20px;
-											max-width: 600px;
-										}
-										textarea {
-											width: 100%;
-											height: 150px;
-											padding: 10px;
-											font-size: 14px;
-											border: 1px solid #ccc;
-											border-radius: 4px;
-											margin-bottom: 10px;
-										}
-										button {
-											background-color: #28a7460e;
-											color: white;
-											border: none;
-											border-radius: 4px;
-											cursor: pointer;
-											margin-bottom: 10px;
-										}
-										button:hover {
-											background-color: #07220d0e;
-										}
-									</style>
-								<br>
-								<div class="note-container">
-									<h2>Take Your Notes</h2>
-									<textarea id="userNote" placeholder="Write your notes here..."></textarea>
-									<button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
-									<button id="clearNoteButton">Clear Note</button>
-									<br><br>
-									<h3>Saved Note</h3>
-									<div id="savedNoteDisplay" style="background-color: #07220d0e; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-										No notes saved yet.
-									</div>
-								</div>
-								
-								<script>
-									// Function to load saved note from local storage
-									function loadNote() {
-										const savedNote = localStorage.getItem('userNote');
-										const savedNoteDisplay = document.getElementById('savedNoteDisplay');
-										if (savedNote) {
-											// Replace newlines with <br> tags for display
-											savedNoteDisplay.innerHTML = savedNote.replace(/\n/g, '<br>');
-										} else {
-											savedNoteDisplay.innerHTML = "No notes saved yet.";
-										}
-									}
-								
-									// Function to save note to local storage
-									document.getElementById('saveNoteButton').addEventListener('click', function() {
-										const userNote = document.getElementById('userNote').value;
-										if (userNote.trim()) {
-											localStorage.setItem('userNote', userNote);
-											loadNote(); // Refresh the saved note display
-											alert('Note saved successfully!');
-										} else {
-											alert('Please enter a note before saving.');
-										}
-									});
-								
-									// Function to clear note from local storage
-									document.getElementById('clearNoteButton').addEventListener('click', function() {
-										localStorage.removeItem('userNote');
-										loadNote(); // Refresh the saved note display
-										alert('Note cleared successfully!');
-									});
-								
-									// Load the saved note on page load
-									window.onload = function() {
-										loadNote();
-									};
-								</script>
+		<style>
+            .note-container {
+                margin: 20px;
+                max-width: 600px;
+            }
+            textarea {
+                width: 100%;
+                height: 150px;
+                padding: 10px;
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                margin-bottom: 10px;
+            }
+            button {
+                background-color: #28a7460e;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-bottom: 10px;
+            }
+            button:hover {
+                background-color: #07220d0e;
+            }
+        </style>
+    <br>
+    <div class="note-container">
+        <h2>Take Your Notes</h2>
+        <textarea id="userNote" placeholder="Write your notes here..."></textarea>
+        <button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
+        <button id="clearNoteButton">Clear Note</button>
+        <br><br>
+        <h3>Saved Note</h3>
+        <div id="savedNoteDisplay" style="background-color: #07220d0e; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            No notes saved yet.
+        </div>
+    </div>
+    
+    <script>
+        // Function to load saved note from local storage
+        function loadNote() {
+            const savedNote = localStorage.getItem('userNote');
+            const savedNoteDisplay = document.getElementById('savedNoteDisplay');
+            if (savedNote) {
+                // Replace newlines with <br> tags for display
+                savedNoteDisplay.innerHTML = savedNote.replace(/\n/g, '<br>');
+            } else {
+                savedNoteDisplay.innerHTML = "No notes saved yet.";
+            }
+        }
+    
+        // Function to save note to local storage
+        document.getElementById('saveNoteButton').addEventListener('click', function() {
+            const userNote = document.getElementById('userNote').value;
+            if (userNote.trim()) {
+                localStorage.setItem('userNote', userNote);
+                loadNote(); // Refresh the saved note display
+                alert('Note saved successfully!');
+            } else {
+                alert('Please enter a note before saving.');
+            }
+        });
+    
+        // Function to clear note from local storage
+        document.getElementById('clearNoteButton').addEventListener('click', function() {
+            localStorage.removeItem('userNote');
+            loadNote(); // Refresh the saved note display
+            alert('Note cleared successfully!');
+        });
+    
+        // Load the saved note on page load
+        window.onload = function() {
+            loadNote();
+        };
+    </script>
         <!-- 1) Basic GPT Analysis of a Static String 
         <button onclick="analyzeTextInGPT()">Analyze Data with GPT (Simple)</button> -->
 
