@@ -1,2 +1,2 @@
 ›·https://astroziv.com<br>›·https://x.com/astroziv<br>›·https://sunpump.meme/token/TYjM22efUwMFcsKjWw9KJpVy19PLmQqBqK<br>›·https://pump.fun/coin/2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump<br>›·https://t.me/s/astroziv_Community
-<blockquote class="twitter-tweet" data-theme="dark"><p lang="zxx" dir="ltr"><a href="https://t.co/JR1vyzaLsR">https://t.co/JR1vyzaLsR</a></p>&mdash; ASTROŽIV (@ASTROZIV) <a href="https://twitter.com/ASTROZIV/status/1882009936365826282?ref_src=twsrc%5Etfw">January 22, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
