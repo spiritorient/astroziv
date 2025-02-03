@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Natal Chart Generator</title>
     <!-- Leaflet CSS, etc. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
@@ -17,12 +17,14 @@
             background-color: #000000;
         }
         .container {
-            max-width: 400px;
+            max-width: 496px;
             margin: 0 auto;
             background: #ffffff00;
             padding: 10px;
             border-radius: 30px;
             box-shadow: 0px 0px 10px rgba(194, 219, 5, 0.591);
+            white-space: normal; /* Ensures text wraps */
+            word-break: break-word; /* Breaks long words if necessary */
         }
         .container22 {
             margin: 0 auto;
@@ -123,18 +125,32 @@
             top: 10px;
             right: 10px;
         }
+
+        #links-container {
+            display: none; /* Hide the links initially */
+        }
+
+        #aditionalst-container {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <br><h5 style="color: #ffdead">token|ASTRZ|—tronscan:<br>
-		TYjM22efUwMFcsKjWw9KJpVy19PLmQqBqK<br>
-		token|ASTRZ|—solscan:<br>
-		2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump<br></h5>
-        <!-- <a href="https://x.com/i/spaces/1BdxYEEByZMxX">·LIVE·</a><br><br> -->
-        <a href="https://x.com/ASTROZIV/status/1877379928330490076">User Manual</a><br>
-	<a href="https://x.com/ASTROZIV/status/1882009936365826282">ASTROŽIV codebase.</a><br>
+        <h3 onclick="toggleLinks()">Click to Show Links</h3>
+        <div id="links-container">
+            <ul>
+                <li><a href="https://x.com/ASTROZIV/status/1877379928330490076" target="_blank">User Manual</a></li><br>
+                <li><a href="https://x.com/ASTROZIV/status/1883802499435389333" target="_blank">Whitepaper</a></li><br>
+                <li><a href="https://www.linkedin.com/in/sabijan/" target="_blank">LinkedIn — Developer Social</a></li><br>
+                <li><a href="https://github.com/spiritorient" target="_blank">GitHub — Open Source</a></li><br>
+                <li><a href="https://x.com/astroziv" target="_blank">X (Twitter)</a></li><br>
+                <li><a href="https://sunpump.meme/token/TYjM22efUwMFcsKjWw9KJpVy19PLmQqBqK" target="_blank">Sunpump Token — TYjM22efUwMFcsKjWw9KJpVy19PLmQqBqK</a></li><br>
+                <li><a href="https://pump.fun/coin/2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump" target="_blank">Pump.fun Coin — 2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump</a></li><br>
+                <li><a href="https://t.me/s/astroziv_Community" target="_blank">Telegram Community</a></li>
+            </ul>
+        </div>
     </div>
     <!-- Natal Chart Calculation Form -->
     <div class="container">
@@ -338,6 +354,27 @@
 
   
   
+    <script>
+        function toggleLinks() {
+            const linksContainer = document.getElementById("links-container");
+            if (linksContainer.style.display === "none") {
+                linksContainer.style.display = "block"; // Show the links
+            } else {
+                linksContainer.style.display = "none"; // Hide the links
+            }
+        }
+    </script>
+
+    <script>
+        function toggleAditionalst() {
+            const linksContainer = document.getElementById("aditionalst-container");
+            if (linksContainer.style.display === "none") {
+                linksContainer.style.display = "block"; 
+            } else {
+                linksContainer.style.display = "none"; 
+            }
+        }
+    </script>
 
     <!-- Leaflet (for the map) -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
