@@ -6,6 +6,12 @@
     <!-- Leaflet CSS, etc. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css"/> -->
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <!-- <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script> -->
+
     <!-- Plotly (for waveforms and aspect wheels) -->
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
 
@@ -136,6 +142,20 @@
 
         #aditionalst-container {
             display: none;
+        }
+
+        .leaflet-control-geosearch {
+            width: 300px;
+            max-width: 90%;
+            margin: 10px;
+        }
+
+        .leaflet-control-geosearch input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -392,7 +412,6 @@
     </script>
 
     <!-- Leaflet (for the map) -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // ------------------------------
         // MAP initialization
@@ -403,14 +422,43 @@
             maxZoom: 18
         }).addTo(map);
         var marker = L.marker([51.5014, -0.1593]).addTo(map);
-
+    
+        // Initialize the GeoSearch control
+        // const provider = new GeoSearch.EsriProvider(); //
+    
+        //const searchControl = new GeoSearch.OpenStreetMapProvider({
+          //  provider: provider,
+            //style: 'bar',
+            //showMarker: true,
+            //showPopup: false,
+            //autoClose: true,
+            //retainZoomLevel: false,
+            //animateZoom: true,
+            //keepResult: true,
+           //searchLabel: 'Enter location',
+       // });
+        //console.log("Search Control:", searchControl);
+        //console.log("Provider:", provider);
+    
+        // Add the search control to the map
+        //map.addControl(searchControl);
+    
+        // Handle the result of the search
+        //map.on('geosearch/showlocation', function(result) {
+          //  const latlng = result.location;
+           // document.getElementById('lat').value = latlng.y;
+            //document.getElementById('lon').value = latlng.x;
+            //marker.setLatLng(latlng);
+        //});
+    
+        // Handle click on the map
         map.on('click', function (e) {
             var latlng = e.latlng;
             document.getElementById('lat').value = latlng.lat;
             document.getElementById('lon').value = latlng.lng;
             marker.setLatLng(latlng);
         });
-
+    
         // --------------------------------------------------
         // GLOBALS
         // --------------------------------------------------

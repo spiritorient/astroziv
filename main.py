@@ -361,6 +361,15 @@ def generate_aspect_plot(positions_deg, selected_aspects):
             radialaxis=dict(visible=False)
         ),
         margin=dict(t=40, b=40, l=40, r=40),
+        legend=dict(
+            x=0,
+            y=0,
+            bordercolor="#666",
+            borderwidth=1,
+            font=dict(color="#ffdead"),
+            # Key: ensures each line toggles individually, not grouped
+            groupclick="toggleitem"
+        ),
     )
 
     if not os.path.exists("static"):
@@ -468,6 +477,16 @@ def build_aspect_wheel_figure_dict(positions_deg, selected_aspects):
             radialaxis=dict(visible=False)
         ),
         margin=dict(t=40, b=40, l=40, r=40),
+        legend=dict(
+            x=0,
+            y=0,
+            bordercolor="#666",
+            borderwidth=1,
+            font=dict(color="#ffdead"),
+            # Key: ensures each line toggles individually, not grouped
+            groupclick="toggleitem"
+        ),
+        
     )
 
     return {
@@ -572,7 +591,7 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
     date_text = []
     date_hovertext = []  # <-- NEW: Date planet hover details
     for p, deg in date_positions.items():
-        date_r.append(0.8)
+        date_r.append(1)
         date_theta.append(deg)
         date_text.append(planet_symbols.get(p, p))
         zodiac_pos = natal_chart.degrees_to_zodiac(deg)
@@ -616,8 +635,8 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
         template="plotly_dark",
         showlegend=True,    # We do want lines to appear in the legend
         legend=dict(
-            x=1.05,
-            y=1.0,
+            x=0,
+            y=0,
             bordercolor="#666",
             borderwidth=1,
             font=dict(color="#ffdead"),
