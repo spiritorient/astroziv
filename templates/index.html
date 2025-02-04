@@ -308,46 +308,64 @@
             <h2>GPT Analysis</h2>
             <!-- GPT analysis will be displayed here -->
             <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
-            <div id="gpt-analysis-result" style="margin-top: 20px; padding: 10px; background-color: #333; color: #ffdead; border: 1px solid #ffdead; border-radius: 8px; display: none;">
-                 <br>
-                 <a href="https://x.com/ASTROZIV">X · #ASTRZ</a>
-                 <a href="https://t.me/astroziv_community">X · COMMUNITY</a>
+            <div id="gpt-analysis-result" style="
+                margin-top: 20px;
+                padding: 15px;
+                background-color: #1a1a1a;
+                color: #ffdead;
+                border: 1px solid #3a3a3a;
+                border-radius: 12px;
+                display: none;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9em;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                overflow-wrap: break-word;
+                box-shadow: 0 2px 8px rgba(194, 219, 5, 0.15);
+                max-height: 300px;
+                overflow-y: auto;
+            ">
+    <div style="text-align: center; margin-bottom: 10px;">
+    </div>
+</div>
             </div>
         </div>
         
     </div>
 
     <!-- Modal for single-date aspect snapshot & natal comparison -->
-<div id="snapshotModal">
-    <div id="snapshotContent">
-      <button onclick="closeSnapshotModal()" style="position:absolute; top:10px; right:10px;">Close</button>
-  
-      <!-- LEFT: NATAl CHART IFRAME -->
-      <div style="flex:1; border:1px solid #ffdead;">
-        <h3 style="text-align:center; color:#ffdead;">Natal Chart</h3>
-        <iframe
-          id="natalComparisonFrame"
-          src=""
-          style="width:100%; height:100%; border:none;"
-        ></iframe>
-      </div>
-  
-      <!-- RIGHT: NEW DATE CHART -->
-      <div style="flex:1; border:1px solid #ffdead;">
-        <h3 style="text-align:center; color:#ffdead;">Clicked Date Chart</h3>
-        <div id="aspectWheelDiv" style="width:100%; height:100%;"></div>
-      </div>
-  
-    </div>
-    <div id="snapshotContent">
-    <!-- MIDDLE: SYNASTRY CHART (NATAL vs. CLICKED DATE) -->
-    <div style="flex:1; border:1px solid #ffdead;">
-        <h3 style="text-align:center; color:#ffdead;">Natal <-> Clicked Date</h3>
-        <div id="synastryWheelDiv" style="width:100%; height:100%;"></div>
-    </div>
-    </div>
+    <div id="snapshotModal">
 
-  </div>
+        <div id="snapshotContent">
+            <!-- MIDDLE: SYNASTRY CHART (NATAL vs. CLICKED DATE) -->
+            <div style="flex:1; border:1px solid #ffdead;">
+                <h3 style="text-align:center; color:#ffdead;">Natal <-> Clicked Date</h3>
+                <div id="synastryWheelDiv" style="width:100%; height:100%;"></div>
+            </div>
+        </div>
+        <!-- <br><br> -->
+        <div id="snapshotContent">
+            <button onclick="closeSnapshotModal()" style="position:absolute; top:10px; right:10px;">Close</button>
+        
+            <!-- LEFT: NATAl CHART IFRAME -->
+            <div style="flex:1; border:1px solid #ffdead;">
+                <h3 style="text-align:center; color:#ffdead;">Natal Chart</h3>
+                <iframe
+                id="natalComparisonFrame"
+                src=""
+                style="width:100%; height:100%; border:none;"
+                ></iframe>
+            </div>
+        
+            <!-- RIGHT: NEW DATE CHART -->
+            <div style="flex:1; border:1px solid #ffdead;">
+                <h3 style="text-align:center; color:#ffdead;">Clicked Date Chart</h3>
+                <div id="aspectWheelDiv" style="width:100%; height:100%;"></div>
+            </div>
+    
+        </div>
+
+    </div>
 
   
   
