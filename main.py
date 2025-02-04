@@ -323,20 +323,26 @@ def generate_aspect_plot(positions_deg, selected_aspects):
     planet_r = []
     planet_theta = []
     planet_text = []
+    hover_texts = []  # <-- NEW: For detailed hover info
     for planet, deg in positions_deg.items():
         planet_r.append(1.0)
         planet_theta.append(deg)
         planet_text.append(planet_symbols.get(planet, planet))
+        # NEW: Calculate zodiac position using existing natal_chart function
+        zodiac_pos = natal_chart.degrees_to_zodiac(deg)
+        hover_texts.append(f"{planet}<br>{zodiac_pos}")  # <-- Multi-line hover
 
     fig.add_trace(go.Scatterpolar(
         r=planet_r,
         theta=planet_theta,
         mode="markers+text",
-        text=planet_text,
+        text=planet_text, 
         textposition="middle center",
-        marker=dict(size=18, color="black", line=dict(color='#ffdead', width=1)),
-        textfont=dict(size=12, color="#ffdead"),
-        showlegend=False
+        marker=dict(size=16, color="black", line=dict(color='#ffdead', width=1)),
+        textfont=dict(size=10, color="#ffdead"),
+        showlegend=False,
+        hoverinfo="text",          # <-- Show custom text
+        hovertext=hover_texts      # <-- Attach detailed info
     ))
 
     fig.update_layout(
@@ -425,10 +431,13 @@ def build_aspect_wheel_figure_dict(positions_deg, selected_aspects):
     planet_r = []
     planet_theta = []
     planet_text = []
+    hover_texts = []
     for planet, deg in positions_deg.items():
         planet_r.append(1.0)
         planet_theta.append(deg)
         planet_text.append(planet_symbols.get(planet, planet))
+        zodiac_pos = natal_chart.degrees_to_zodiac(deg)
+        hover_texts.append(f"{planet}<br>{zodiac_pos}")
 
     fig.add_trace(go.Scatterpolar(
         r=planet_r,
@@ -436,9 +445,11 @@ def build_aspect_wheel_figure_dict(positions_deg, selected_aspects):
         mode="markers+text",
         text=planet_text,
         textposition="middle center",
-        marker=dict(size=18, color="black", line=dict(color='#ffdead', width=1)),
-        textfont=dict(size=12, color="#ffdead"),
-        showlegend=False
+        marker=dict(size=16, color="black", line=dict(color='#ffdead', width=1)),
+        textfont=dict(size=10, color="#ffdead"),
+        showlegend=False,
+        hoverinfo="text",
+        hovertext=hover_texts
     ))
 
     fig.update_layout(
@@ -530,6 +541,55 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
             hoverinfo="none"
         ))
 
+    # 3) Plot natal planets (with enhanced hover, no legend entry -> always visible)
+    natal_r = []
+    natal_theta = []
+    natal_text = []
+    natal_hovertext = []  # <-- NEW: Natal planet hover details
+    for p, deg in natal_positions.items():
+        natal_r.append(1.0)
+        natal_theta.append(deg)
+        natal_text.append(planet_symbols.get(p, p))
+        zodiac_pos = natal_chart.degrees_to_zodiac(deg)
+        natal_hovertext.append(f"Natal {p}<br>{zodiac_pos}")  # <-- Using existing calculation
+
+    fig.add_trace(go.Scatterpolar(
+        r=natal_r,
+        theta=natal_theta,
+        mode="markers+text",
+        text=natal_text,
+        textposition="middle center",
+        marker=dict(size=18, color="black", line=dict(color="#ffdead", width=1)),
+        textfont=dict(size=12, color="#ffdead"),
+        showlegend=False,      # hide from legend
+        hoverinfo="text", # <-- Critical: Show custom text
+        hovertext=natal_hovertext  # <-- Attach detailed natal info
+    ))
+
+    # 4) Plot date planets (with enhanced hover and no legend entry -> always visible)
+    date_r = []
+    date_theta = []
+    date_text = []
+    date_hovertext = []  # <-- NEW: Date planet hover details
+    for p, deg in date_positions.items():
+        date_r.append(0.8)
+        date_theta.append(deg)
+        date_text.append(planet_symbols.get(p, p))
+        zodiac_pos = natal_chart.degrees_to_zodiac(deg)
+        date_hovertext.append(f"Date {p}<br>{zodiac_pos}")  # <-- Reuse conversion
+    fig.add_trace(go.Scatterpolar(
+        r=date_r,
+        theta=date_theta,
+        mode="markers+text",
+        text=date_text,
+        textposition="middle center",
+        marker=dict(size=14, color="blue", line=dict(color="#ddd", width=1)),
+        textfont=dict(size=12, color="#ffdead"),
+        showlegend=False,      # hide from legend
+        hoverinfo="text",
+        hovertext=date_hovertext  # <-- Date-specific info
+    ))
+
     # 2) Add aspect lines for natal↔date
     #    Each line is its own legend item, toggled individually.
     for nat_planet, nat_deg in natal_positions.items():
@@ -542,7 +602,7 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
                 if abs(diff - aspect_angle) <= orb[asp_name]:
                     color = aspect_colors.get(asp_name, "cyan")
                     fig.add_trace(go.Scatterpolar(
-                        r=[1, 0.8],               # radius for lines
+                        r=[1, 1],               # radius for lines
                         theta=[nat_deg, date_deg],
                         mode="lines",
                         line=dict(color=color, width=1),
@@ -550,46 +610,6 @@ def build_synastry_wheel(natal_positions, date_positions, selected_aspects):
                         showlegend=True,         # lines appear in legend
                         hoverinfo="none"
                     ))
-
-    # 3) Plot natal planets (no legend entry -> always visible)
-    natal_r = []
-    natal_theta = []
-    natal_text = []
-    for p, deg in natal_positions.items():
-        natal_r.append(1.0)
-        natal_theta.append(deg)
-        natal_text.append(planet_symbols.get(p, p))
-    fig.add_trace(go.Scatterpolar(
-        r=natal_r,
-        theta=natal_theta,
-        mode="markers+text",
-        text=natal_text,
-        textposition="middle center",
-        marker=dict(size=18, color="black", line=dict(color="#ffdead", width=1)),
-        textfont=dict(size=12, color="#ffdead"),
-        showlegend=False,      # hide from legend
-        hoverinfo="text"
-    ))
-
-    # 4) Plot date planets (no legend entry -> always visible)
-    date_r = []
-    date_theta = []
-    date_text = []
-    for p, deg in date_positions.items():
-        date_r.append(0.8)
-        date_theta.append(deg)
-        date_text.append(planet_symbols.get(p, p))
-    fig.add_trace(go.Scatterpolar(
-        r=date_r,
-        theta=date_theta,
-        mode="markers+text",
-        text=date_text,
-        textposition="middle center",
-        marker=dict(size=14, color="blue", line=dict(color="#ddd", width=1)),
-        textfont=dict(size=12, color="#ffdead"),
-        showlegend=False,      # hide from legend
-        hoverinfo="text"
-    ))
 
     # 5) Configure legend for "line-by-line" toggling
     fig.update_layout(

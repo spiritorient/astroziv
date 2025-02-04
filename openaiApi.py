@@ -22,12 +22,11 @@ def analyze_data_with_gpt(data):
     """
     # Using new openai>=1.0.0 syntax: openai.Chat.create(...)
     response = client.chat.completions.create(
-        model="gpt-4o",  # or "gpt-4", "gpt-3.5-turbo-16k", etc.
+        model="gpt-4o",
         messages=[
-            # {"role": "system", "content": "You're an excellent and experienced intellectual academic expert. You apply analytical interdisciplinary methodology by merging relevant scientific branches. Discursive, extensive and enlightening analysis. Depth analysis and content breakdown. You pay particular attention to the exhaustive and sovereign derivation of definitions of terms. Analytically you connect context and self-inciatively create textually and intellectually rich and deep content. Qualitative and quantitative writing style."},
             {
                 "role": "user",
-                "content": f"Please analyze the following data as roleplaying a role of adept astrologist:\n\n{data}\n"
+                "content": f"Please analyze the following data as roleplaying a role of an adept astrologist:\n\n{data}\n"
             }
         ],
        # temperature=0.7
