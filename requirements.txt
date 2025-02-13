@@ -10,3 +10,4 @@ datetime
 plotly
 openai
 python-dotenv
+flask-cors

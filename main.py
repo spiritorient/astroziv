@@ -8,10 +8,23 @@ import plotly.graph_objects as go
 
 import natal_chart
 import transit_waveforms
+
+from flask_cors import CORS  # <-- Import this
+
 import openaiApi #gpt implemented
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env variables
 
 app = Flask(__name__)
+CORS(app)
 
+@app.route('/config')
+def get_config():
+    return jsonify({
+        "api_key": os.getenv("OPENAI_API_KEY"),
+        "assistant_id": os.getenv("ASSISTANT_ID")
+    })
 # -----------------------------------------------------------
 #   Planets, Signs, Aspects
 # -----------------------------------------------------------
