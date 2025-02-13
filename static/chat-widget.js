@@ -66,7 +66,7 @@
   // Fetch the API key and assistant ID from the Flask backend
   async function fetchConfig() {
       try {
-          const response = await fetch("traverse-journeys.onrender.com/config");
+          const response = await fetch("https://traverse-journeys.onrender.com/config");
           if (!response.ok) throw new Error("Failed to fetch config");
           const data = await response.json();
           ASSISTANT_ID = data.assistant_id;
