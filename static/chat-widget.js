@@ -60,7 +60,7 @@
   const closePopup = document.getElementById('close-popup');
 
   let threadId = null;
-  const OPENAI_API_KEY = "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";  // Replace with actual key
+  const OPENAI_API_KEY = "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";  // Replace with actual key
   const ASSISTANT_ID = "asst_mcEJdPyp5ATrM1f86vj7v5ED";  // Replace with actual Assistant ID
   const API_HEADERS = {
       "Authorization": `Bearer ${OPENAI_API_KEY}`,
