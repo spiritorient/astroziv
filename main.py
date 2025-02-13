@@ -224,7 +224,7 @@ def analyze_waveforms():
             return jsonify({"error": "No 'waveforms_text' field provided."}), 400
 
         waveforms_text = data["waveforms_text"]
-        result = openaiApi.analyze_data_with_gpt(waveforms_text)
+        result = openaiApi.analyze_data_with_assistant(waveforms_text)
         print("[/analyze_waveforms] GPT analysis result:", result)
         return jsonify({"analysis": result}), 200
     except Exception as e:

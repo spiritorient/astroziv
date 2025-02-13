@@ -3,6 +3,9 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Natal Chart Generator</title>
+
+    <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+
     <!-- Leaflet CSS, etc. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 
@@ -15,6 +18,8 @@
     <!-- Plotly (for waveforms and aspect wheels) -->
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
 
+    <script async src="{{ url_for('static', filename='chat-widget.js') }}"></script>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,8 +27,8 @@
             padding: 20px;
             background-color: #000000;
         }
-        .container {
-            max-width: 496px;
+        .ccontainer {
+            max-width: 469px;
             margin: 0 auto;
             background: #ffffff00;
             padding: 10px;
@@ -32,7 +37,7 @@
             white-space: normal; /* Ensures text wraps */
             word-break: break-word; /* Breaks long words if necessary */
         }
-        .container22 {
+        .ccontainer22 {
             margin: 0 auto;
             background: #ffffff00;
             padding: 10px;
@@ -40,7 +45,7 @@
             box-shadow: 0px 0px 10px rgba(194, 219, 5, 0.591);
         }
         h1, h2, h3 {
-            color: #333;
+            color: #333333;
             text-align: center;
         }
         .form-group {
@@ -101,8 +106,8 @@
             color: #000000;
         }
         #map {
-            height: 400px;
-            width: 100%;
+            height: 40vh;
+            max-width: auto;
             margin-bottom: 20px;
         }
         /* Hide Leaflet attribution controls */
@@ -136,11 +141,11 @@
             right: 10px;
         }
 
-        #links-container {
+        #links-ccontainer {
             display: none; /* Hide the links initially */
         }
 
-        #aditionalst-container {
+        #aditionalst-ccontainer {
             display: none;
         }
 
@@ -157,13 +162,41 @@
             border-radius: 4px;
             font-size: 14px;
         }
+
+        a:link {
+            color: #5b0b80;
+            background-color: transparent;
+            text-decoration: none;
+        }
+
+        a:visited {
+            color: rgb(26, 159, 139);
+            background-color: transparent;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: rgb(101, 1, 1);
+            background-color: transparent;
+            text-decoration: underline;
+        }
+
+        a:active {
+            color: rgb(3, 24, 96);
+            background-color: transparent;
+            text-decoration: underline;
+        }
+
+        .modebar-group {
+            display: none !important;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <!-- <h3 onclick="toggleLinks()">Click to Show Links</h3> -->
-        <!-- <div id="links-container"> -->
+    <div class="ccontainer">
+        <h3 onclick="toggleLinks()">DoubleClick to Show Links</h3>
+        <div id="links-ccontainer">
             <h3>·Links·</h3>
             <ul>
                 <li><a href="https://x.com/ASTROZIV/status/1877379928330490076" target="_blank">User Manual</a></li><br>
@@ -171,13 +204,14 @@
                 <li><a href="https://www.linkedin.com/in/sabijan/" target="_blank">LinkedIn — Developer Social</a></li><br>
                 <li><a href="https://github.com/spiritorient" target="_blank">GitHub — Open Source</a></li><br>
                 <li><a href="https://x.com/astroziv" target="_blank">X (Twitter)</a></li><br>
+                
                 <li><a href="https://dexscreener.com/solana/bemzjz24gwrufksud6okj4h4vaue6n2kkxlzcgg1jnks" target="_blank">$ASTRZ ›· 2DQm4mAo3xcVjiHdUcPMfCTe848cZqUHEL4b2Gbppump</a></li><br>
-                <li><a href="https://t.me/s/astroziv_Community" target="_blank">Telegram Community</a></li>
+                <li><a href="https://t.me/s/as  troziv_dev" target="_blank">|dev| Telegram Group</a></li>
             </ul>
-        <!-- </div> -->
+        </div>
     </div>
     <!-- Natal Chart Calculation Form -->
-    <div class="container">
+    <div class="ccontainer">
         <h1>·ASTROŽIV·</h1>
         <form id="natal-form">
             <div id="map"></div>
@@ -208,14 +242,14 @@
     </div>
 
     <!-- Display Natal Chart Results -->
-    <div class="container">
+    <div class="ccontainer">
         <div class="results" id="results">
             <!-- Results from natal chart calculation go here. -->
         </div>
     </div>
 
     <!-- Plot Generation Form (hidden until after natal chart calculation) -->
-    <div class="container" id="plot-form-container" style="display: none;">
+    <div class="ccontainer" id="plot-form-ccontainer" style="display: none;">
         <h2>Generate Natal Chart</h2>
         <form id="plot-form">
             <!-- Planet positions are auto-filled, but hidden from the user -->
@@ -243,7 +277,7 @@
     </div>
 
     <!-- Single Aspect Chart Viewer (Natal) -->
-    <div class="container22" id="chart-container" style="display: none;">
+    <div class="ccontainer22" id="chart-ccontainer" style="display: none;">
         <h2>Natal Chart Viewer</h2>
         <iframe id="chart-frame" 
                 title="Aspect Chart"
@@ -252,7 +286,7 @@
     </div>
 
     <!-- Transit Waveforms Form (hidden by default) -->
-    <div class="container" id="transit-form-container" style="display: none;">
+    <div class="ccontainer" id="transit-form-ccontainer" style="display: none;">
         <h2>Generate Transit Waveforms</h2><br>
         <form id="transit-form">
             <div class="form-group">
@@ -317,13 +351,13 @@
     </div>
 
     <!-- NO IFRAME: We'll show waveforms in a <div> -->
-    <div class="container22" id="waveform-result-container" style="display: none;">
+    <div class="ccontainer22" id="waveform-result-ccontainer" style="display: none;">
         <div id="waveform-result">
             <h3>Transit Waveform Plot</h3>
             <!-- Waveforms go here -->
             <div id="waveformsDiv" style="width:100%; height:600px; background:#222;"></div>
         </div>
-        <div class="container">
+        <div class="ccontainer">
             <h2>GPT Analysis</h2>
             <!-- GPT analysis will be displayed here -->
             <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
@@ -385,12 +419,11 @@
         </div>
 
     </div>
+  
 
-  
-  
     <script>
         function toggleLinks() {
-            const linksContainer = document.getElementById("links-container");
+            const linksContainer = document.getElementById("links-ccontainer");
             if (linksContainer.style.display === "none") {
                 linksContainer.style.display = "block"; // Show the links
             } else {
@@ -401,7 +434,7 @@
 
     <script>
         function toggleAditionalst() {
-            const linksContainer = document.getElementById("aditionalst-container");
+            const linksContainer = document.getElementById("aditionalst-ccontainer");
             if (linksContainer.style.display === "none") {
                 linksContainer.style.display = "block"; 
             } else {
@@ -501,8 +534,8 @@
                     autoFillNatalChartData();
 
                     // Show the aspect-plot form & waveforms form
-                    document.getElementById('plot-form-container').style.display = 'block';
-                    document.getElementById('transit-form-container').style.display = 'block';
+                    document.getElementById('plot-form-ccontainer').style.display = 'block';
+                    document.getElementById('transit-form-ccontainer').style.display = 'block';
                 } else {
                     resultsDiv.innerHTML = `<p>Error: ${data.error}</p>`;
                 }
@@ -585,7 +618,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data.plot_url) {
-                    document.getElementById('chart-container').style.display = 'block';
+                    document.getElementById('chart-ccontainer').style.display = 'block';
                     let chartFrame = document.getElementById('chart-frame');
                     chartFrame.src = data.plot_url;  // original method for natal
                 } else {
@@ -654,7 +687,7 @@
                 if (data.error) {
                     alert("Error: " + data.error);
                 } else if (data.figure) {
-                    document.getElementById('waveform-result-container').style.display = 'block';
+                    document.getElementById('waveform-result-ccontainer').style.display = 'block';
                     // Plot the waveforms
                     Plotly.newPlot("waveformsDiv", data.figure.data, data.figure.layout);
 
@@ -811,10 +844,10 @@
     </script>
 
     <!-- GPT Analysis Buttons -->
-    <div class="container">
+    <div class="ccontainer">
         <title>User Notes</title>
 		<style>
-            .note-container {
+            .note-ccontainer {
                 margin: 20px;
                 max-width: 600px;
             }
@@ -840,7 +873,7 @@
             }
         </style>
     <br>
-    <div class="note-container">
+    <div class="note-ccontainer">
         <h2>Take Your Notes</h2>
         <textarea id="userNote" placeholder="Write your notes here..."></textarea>
         <button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
@@ -895,5 +928,6 @@
         <!-- 2) GPT Analysis of the Actual Transit Waveforms
         <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button> -->
     </div>
+    
 </body>
 </html>
