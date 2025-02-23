@@ -34,7 +34,7 @@
   </div>
   <div id="chat-popup" class="hidden bg-gray-900 border border-purple-800 absolute bottom-20 right-0 w-96 rounded-md shadow-md flex flex-col transition-all text-sm">
     <div id="chat-header" class="flex justify-between items-center p-4 bg-gray-900 text-white border border-purple-800 rounded-md">
-      <h3 class="m-0 text-lg">ASTROŽIV ·AI·</h3>
+      <h3 class="m-0 text-lg">| assistant·ASTROŽIV·AI |</h3>
       <button id="close-popup" class="bg-transparent border-none text-white cursor-pointer">✕</button>
     </div>
     <div class="content-loader"><div class="typing-loader"></div></div>
@@ -71,7 +71,7 @@
           const data = await response.json();
           ASSISTANT_ID = data.assistant_id;
           API_KEY = data.api_key; // Store the API key
-          console.log("API Key:", API_KEY); // Debugging line
+          console.log("·· Welcome to the ASTROŽIV™ Traveler ··"); // Debugging line
       } catch (error) {
           console.error("Error fetching config:", error);
       }

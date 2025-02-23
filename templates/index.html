@@ -8,12 +8,8 @@
 
     <!-- Leaflet CSS, etc. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-
-    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css"/> -->
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
-    <!-- <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script> -->
+
 
     <!-- Plotly (for waveforms and aspect wheels) -->
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -158,9 +154,11 @@
         .leaflet-control-geosearch input {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 1px solid #ffdead;
+            border-radius: 100px;
             font-size: 14px;
+            background-color: #333;
+            color: #ffdead;
         }
 
         a:link {
@@ -190,6 +188,71 @@
         .modebar-group {
             display: none !important;
         }
+
+        .astro-button {
+            padding: 10px 20px;
+            color: black; /* Black text as in the hover state */
+            border: 2px double black; /* Double black border as in the hover state */
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            background-color: #ffdead; /* Bright background as in the hover state */
+            margin-top: 15px;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 222, 173, 0.9); /* Default glow */
+            transition: background-color 0.3s, color 0.3s, border 0.3s, box-shadow 0.3s, transform 0.3s; /* Include transform for smooth scale transitions */
+            animation: subtlePulse 3s infinite ease-in-out; /* Subtle, slow pulsating effect */
+        }
+
+        .astro-button:hover {
+            background-color: #ffdead; /* Maintain the same background */
+            color: black; /* Maintain black text */
+            border: 2px double black; /* Maintain the double black border */
+            box-shadow: 0 0 30px rgba(255, 222, 173, 1); /* Slightly brighter glow on hover for subtle feedback */
+            animation: none; /* Disable pulse on hover to avoid conflict */
+        }
+
+        /* Define the subtle pulse animation */
+        @keyframes subtlePulse {
+            0% {
+                transform: scale(1); /* Normal size */
+                box-shadow: 0 0 20px rgba(255, 222, 173, 0.9); /* Default glow */
+            }
+            50% {
+                transform: scale(1.05); /* Slightly larger (5% increase) for subtle prominence */
+                box-shadow: 0 0 25px rgba(255, 222, 173, 1); /* Slightly brighter glow */
+            }
+            100% {
+                transform: scale(1); /* Back to normal */
+                box-shadow: 0 0 20px rgba(255, 222, 173, 0.9); /* Default glow */
+            }
+        }
+
+        /* Add a subtle sparkle effect using pseudo-elements */
+        .astro-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: sparkle 3s infinite ease-in-out;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; width: 0; height: 0; }
+            50% { opacity: 0.5; width: 20px; height: 20px; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -216,6 +279,11 @@
         <h1>·ASTROŽIV·</h1>
         <form id="natal-form">
             <div id="map"></div>
+            <div class="form-group">
+                <label for="location-search">Search Location:</label>
+                <input type="text" id="location-search" placeholder="Enter city or location">
+                <button type="button" id="search-button">Search Map</button>
+            </div>
             <div style="display: none;">
                 <label for="chartName">Chart Name:</label>
                 <input type="text" id="chartName" name="chartName" placeholder="Enter chart name">
@@ -358,10 +426,28 @@
             <!-- Waveforms go here -->
             <div id="waveformsDiv" style="width:100%; height:600px; background:#222;"></div>
         </div>
+        <br>
         <div class="ccontainer">
-            <h2>GPT Analysis</h2>
+            <h2>|reasoning·ASTROŽIV·AI| Analysis</h2>
             <!-- GPT analysis will be displayed here -->
-            <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button>
+            <button class="astro-button" onclick="analyzeWaveformsWithGPT()">Analyze Transits with |reasoning·ASTROŽIV·AI|</button>
+            <!-- Loading spinner -->
+                <div id="loadingSpinner" style="
+                display: none;
+                text-align: center;
+                margin-top: 20px;
+            ">
+                <div style="
+                    width: 40px;
+                    height: 40px;
+                    border: 4px solid #ffdead;
+                    border-top: 4px solid #333;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    display: inline-block;
+                "></div>
+                <p style="color: #ffdead; margin-top: 10px;">Loading GPT Analysis...</p>
+            </div>
             <div id="gpt-analysis-result" style="
                 margin-top: 20px;
                 padding: 15px;
@@ -376,15 +462,13 @@
                 white-space: pre-wrap;
                 overflow-wrap: break-word;
                 box-shadow: 0 2px 8px rgba(194, 219, 5, 0.15);
-                max-height: 300px;
+                max-height: 444px;
                 overflow-y: auto;
             ">
-    <div style="text-align: center; margin-bottom: 10px;">
-    </div>
-</div>
+                <div style="text-align: center; margin-bottom: 10px;"></div>
             </div>
         </div>
-        
+        <br>
     </div>
 
     <!-- Modal for single-date aspect snapshot & natal comparison -->
@@ -446,50 +530,59 @@
 
     <!-- Leaflet (for the map) -->
     <script>
-        // ------------------------------
-        // MAP initialization
-        // ------------------------------
-        var map = L.map('map').setView([51.5014, -0.1593], 13);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USGS, NOAA',
-            maxZoom: 18
+        // Map initialization
+        var map = L.map('map').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-        var marker = L.marker([51.5014, -0.1593]).addTo(map);
+        var marker = L.marker([51.505, -0.09]).addTo(map);
+
+        document.getElementById('search-button').addEventListener('click', function() {
+            var query = document.getElementById('location-search').value;
+            if (query) {
+                searchLocation(query);
+            } else {
+                alert('Please enter a location to search.');
+            }
+        });
+
+        function searchLocation(query) {
+            console.log('Searching for:', query); // Log the search term
+            var url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+            console.log('Fetch URL:', url); // Log the URL being fetched
+            fetch(url)
+                .then(response => {
+                    console.log('Response status:', response.status); // Log the HTTP status
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response:', data); // Log the full API response
+                    if (data && data.length > 0) {
+                        var lat = parseFloat(data[0].lat);
+                        var lon = parseFloat(data[0].lon);
+                        document.getElementById('lat').value = lat;
+                        document.getElementById('lon').value = lon;
+                        marker.setLatLng([lat, lon]);
+                        map.setView([lat, lon], 13);
+                        console.log('Search result - Lat:', lat, 'Lon:', lon); // Log the coordinates
+                    } else {
+                        alert('No location found for "' + query + '"');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching location:', error); // Log any errors
+                    alert('Failed to search location. Please try again.');
+                });
+        }
     
-        // Initialize the GeoSearch control
-        // const provider = new GeoSearch.EsriProvider(); //
-    
-        //const searchControl = new GeoSearch.OpenStreetMapProvider({
-          //  provider: provider,
-            //style: 'bar',
-            //showMarker: true,
-            //showPopup: false,
-            //autoClose: true,
-            //retainZoomLevel: false,
-            //animateZoom: true,
-            //keepResult: true,
-           //searchLabel: 'Enter location',
-       // });
-        //console.log("Search Control:", searchControl);
-        //console.log("Provider:", provider);
-    
-        // Add the search control to the map
-        //map.addControl(searchControl);
-    
-        // Handle the result of the search
-        //map.on('geosearch/showlocation', function(result) {
-          //  const latlng = result.location;
-           // document.getElementById('lat').value = latlng.y;
-            //document.getElementById('lon').value = latlng.x;
-            //marker.setLatLng(latlng);
-        //});
-    
-        // Handle click on the map
-        map.on('click', function (e) {
-            var latlng = e.latlng;
-            document.getElementById('lat').value = latlng.lat;
-            document.getElementById('lon').value = latlng.lng;
-            marker.setLatLng(latlng);
+        // Handle click on the map (existing functionality)
+        map.on('click', function(e) {
+            var lat = e.latlng.lat;
+            var lon = e.latlng.lng;
+            document.getElementById('lat').value = lat;
+            document.getElementById('lon').value = lon;
+            marker.setLatLng([lat, lon]);
+            console.log('Map click - Lat:', lat, 'Lon:', lon);
         });
     
         // --------------------------------------------------
@@ -778,76 +871,82 @@
         function closeSnapshotModal() {
             document.getElementById("snapshotModal").style.display = "none";
         }
-
+    </script>
+    <script>
         // --------------------------------------------------
         // GPT Analysis Buttons
         // --------------------------------------------------
-        function analyzeTextInGPT() {
-            const text = "This is a sample text to analyze with GPT.";
-            fetch("/analyze_data", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    console.error("[Browser] GPT analysis error:", data.error);
-                    alert("Error: " + data.error);
-                } else {
-                    console.log("[Browser] GPT analysis result:", data.analysis);
-                    alert("Check the browser console for GPT’s analysis result!\n" + data.analysis);
-                }
-            })
-            .catch(err => {
-                console.error("[Browser] fetch error:", err);
-                alert("Request failed. See console for error details.");
-            });
+
+        // Updated GPT Analysis Function
+        async function analyzeWaveformsWithGPT() {
+        if (!window.lastTransits || window.lastTransits.length === 0) {
+            alert("No transits available! Generate waveforms first.");
+            return;
         }
 
-        function analyzeWaveformsWithGPT() {
-            if (!window.lastTransits || window.lastTransits.length === 0) {
-                alert("No transits available! Generate waveforms first.");
-                return;
-            }
-            let summary = "Here are the calculated transits:\n\n";
-            window.lastTransits.forEach((t, i) => {
-                summary += `${i + 1}. Date: ${t.date}, Transiting Planet: ${t.transiting_planet}, `
-                        + `Natal Planet: ${t.natal_planet}, Aspect: ${t.aspect}, Intensity: ${t.intensity}\n`;
-            });
-            summary += "\nPlease provide an insightful analysis of these transits.\n";
+        // Show the loading spinner
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const gptResultDiv = document.getElementById('gpt-analysis-result');
+        if (loadingSpinner) loadingSpinner.style.display = 'block';
+        if (gptResultDiv) gptResultDiv.style.display = 'none';
 
-            console.log("[Waveforms -> GPT] waveforms_text:", summary);
-            fetch("/analyze_waveforms", {
+        // Build a single summary for all days
+        let summary = "The following Daily transit data is provided in the format: · TransitingPlanet-Aspect-NatalPlanet-Intensity ; where Intensity is a decimal between 0.000 and 1\n\n";
+        const transitsByDate = {};
+        window.lastTransits.forEach(transit => {
+            const date = transit.date;
+            if (!transitsByDate[date]) transitsByDate[date] = [];
+            transitsByDate[date].push(transit);
+        });
+
+        const dates = Object.keys(transitsByDate).sort();
+        dates.forEach(date => {
+            summary += `• Day: ${date}\n`;
+            const dayTransits = transitsByDate[date];
+            dayTransits.forEach(t => {
+                summary += `· ${t.transiting_planet}-${t.aspect}-${t.natal_planet}-${t.intensity}\n`;
+            });
+            summary += "\n";
+        });
+
+        console.log("[Waveforms -> GPT] Sending all transit data:", summary);
+
+        try {
+            const response = await fetch("/analyze_waveforms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ waveforms_text: summary })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    console.error("[Browser] GPT waveforms analysis error:", data.error);
-                    alert("Error: " + data.error);
-                } else {
-                    console.log("[Browser] GPT waveforms analysis result:", data.analysis);
-
-                    // Display the result in the div
-                    const resultDiv = document.getElementById("gpt-analysis-result");
-                    resultDiv.style.display = "block"; // Show the div
-                    resultDiv.innerHTML = `<h3>GPT Analysis Result:</h3><p>${data.analysis}</p>`;
-                }
-            })
-            .catch(err => {
-                console.error("[Browser] fetch error:", err);
-                alert("Request failed. See console for details.");
             });
+            if (!response.ok) throw new Error(await response.text());
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            // Log the GPT response to the console
+             console.log("[Waveforms -> GPT] Response received:", data.analysis);
+             console.log("[Waveforms -> GPT] Full response data:", data);
+
+            // Display the result
+            if (gptResultDiv) {
+                gptResultDiv.style.display = "block";
+                gptResultDiv.innerHTML = `<h3>ASTROŽIV Reasoning Analysis</h3><p>${data.analysis}</p>`;
+            }
+        } catch (err) {
+            console.error("[Browser] Error in GPT analysis:", err);
+            let errorMessage = "An error occurred during GPT analysis. See console for details.";
+            if (err.message.includes("Rate limit reached")) {
+                errorMessage = "Error: Rate limit reached. Please wait a moment and try again.";
+            }
+            alert(errorMessage);
+        } finally {
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
         }
+    }
     </script>
 
-    <!-- GPT Analysis Buttons -->
+    <!-- Local User Notes -->
     <div class="ccontainer">
         <title>User Notes</title>
-		<style>
+        <style>
             .note-ccontainer {
                 margin: 20px;
                 max-width: 600px;
@@ -870,64 +969,60 @@
                 margin-bottom: 10px;
             }
             button:hover {
-                background-color: #07220d0e;
+                background-color: #03be2c0e;
             }
         </style>
-    <br>
-    <div class="note-ccontainer">
-        <h2>Take Your Notes</h2>
-        <textarea id="userNote" placeholder="Write your notes here..."></textarea>
-        <button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
-        <button id="clearNoteButton">Clear Note</button>
-        <br><br>
-        <h3>Saved Note</h3>
-        <div id="savedNoteDisplay" style="background-color: #07220d0e; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            No notes saved yet.
+        <br>
+        <div class="note-ccontainer">
+            <h2>Take Your Notes</h2>
+            <textarea id="userNote" placeholder="Write your notes here..."></textarea>
+            <button id="saveNoteButton" style="margin-inline-end: 5px;">Save Note</button>
+            <button id="clearNoteButton">Clear Note</button>
+            <br><br>
+            <h3>Saved Note</h3>
+            <div id="savedNoteDisplay" style="background-color: #07220d0e; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                No notes saved yet.
+            </div>
         </div>
-    </div>
-    
-    <script>
-        // Function to load saved note from local storage
-        function loadNote() {
-            const savedNote = localStorage.getItem('userNote');
-            const savedNoteDisplay = document.getElementById('savedNoteDisplay');
-            if (savedNote) {
-                // Replace newlines with <br> tags for display
-                savedNoteDisplay.innerHTML = savedNote.replace(/\n/g, '<br>');
-            } else {
-                savedNoteDisplay.innerHTML = "No notes saved yet.";
+        
+        <script>
+            // Function to load saved note from local storage
+            function loadNote() {
+                const savedNote = localStorage.getItem('userNote');
+                const savedNoteDisplay = document.getElementById('savedNoteDisplay');
+                if (savedNote) {
+                    // Replace newlines with <br> tags for display
+                    savedNoteDisplay.innerHTML = savedNote.replace(/\n/g, '<br>');
+                } else {
+                    savedNoteDisplay.innerHTML = "No notes saved yet.";
+                }
             }
-        }
-    
-        // Function to save note to local storage
-        document.getElementById('saveNoteButton').addEventListener('click', function() {
-            const userNote = document.getElementById('userNote').value;
-            if (userNote.trim()) {
-                localStorage.setItem('userNote', userNote);
+        
+            // Function to save note to local storage
+            document.getElementById('saveNoteButton').addEventListener('click', function() {
+                const userNote = document.getElementById('userNote').value;
+                if (userNote.trim()) {
+                    localStorage.setItem('userNote', userNote);
+                    loadNote(); // Refresh the saved note display
+                    alert('Note saved successfully!');
+                } else {
+                    alert('Please enter a note before saving.');
+                }
+            });
+        
+            // Function to clear note from local storage
+            document.getElementById('clearNoteButton').addEventListener('click', function() {
+                localStorage.removeItem('userNote');
                 loadNote(); // Refresh the saved note display
-                alert('Note saved successfully!');
-            } else {
-                alert('Please enter a note before saving.');
-            }
-        });
-    
-        // Function to clear note from local storage
-        document.getElementById('clearNoteButton').addEventListener('click', function() {
-            localStorage.removeItem('userNote');
-            loadNote(); // Refresh the saved note display
-            alert('Note cleared successfully!');
-        });
-    
-        // Load the saved note on page load
-        window.onload = function() {
-            loadNote();
-        };
-    </script>
-        <!-- 1) Basic GPT Analysis of a Static String 
-        <button onclick="analyzeTextInGPT()">Analyze Data with GPT (Simple)</button> -->
+                alert('Note cleared successfully!');
+            });
+        
+            // Load the saved note on page load
+            window.onload = function() {
+                loadNote();
+            };
+        </script>
 
-        <!-- 2) GPT Analysis of the Actual Transit Waveforms
-        <button onclick="analyzeWaveformsWithGPT()">Analyze Waveforms with GPT</button> -->
     </div>
     
 </body>

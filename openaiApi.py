@@ -1,71 +1,46 @@
 import os
+from re import T
 from dotenv import load_dotenv
 from openai import OpenAI
+import time
 
-# Load environment variables (e.g., OPENAI_API_KEY) from .env, if present
 load_dotenv()
-
-# Initialize the OpenAI client
 client = OpenAI()
-
-# Ensure the API key is set
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("Missing OPENAI_API_KEY environment variable.")
 
-# Your Assistant ID (replace with your actual Assistant ID)
-ASSISTANT_ID = "asst_mcEJdPyp5ATrM1f86vj7v5ED"
-
-def analyze_data_with_assistant(data):
+def analyze_data_with_chat_completion(data):
     """
-    Sends the 'data' to your OpenAI Assistant for analysis.
-    Returns the Assistant's response text.
+    Sends all transit data to OpenAI's Chat Completion API in a single request.
+    Returns the model's response text.
     """
-    # Create a new thread
-    thread = client.beta.threads.create()
-
-    # Add the user's message to the thread
-    client.beta.threads.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content=f"Please analyze the following data as roleplaying a role of an adept astrologist:\n\n{data}\n"
-    )
-
-    # Run the Assistant on the thread
-    run = client.beta.threads.runs.create(
-        thread_id=thread.id,
-        assistant_id=ASSISTANT_ID
-    )
-
-    # Wait for the Assistant to respond
-    while run.status != "completed":
-        run = client.beta.threads.runs.retrieve(
-            thread_id=thread.id,
-            run_id=run.id
+    system_message = """
+You're an excellent and experienced intellectual expert in a role of an adept astrologist that provides discursive, extensive and enlightening deep analysis with qualitative and quantitative writing style; analyze all of the following data progressively ensuring no transit is omitted for any day, including multiple transits on the same day and provide an insightful and deep analysis of every and each of the transits for every and each day, furthermore provide 'Warnings', 'Advices' and 'Guidances' regarding 'Daily Actions' for all of the timespan depending on every and each of the transits and corresponding intensities, additionally provide detailed 'Daily Insights' and 'Conclusions' taking into account data as a whole in fluent and follow up style, furthermore explaining provided with insightful and holistic style of full data analysis.
+"""
+    try:
+        response = client.chat.completions.create(
+            model="o1-mini",
+            messages=[
+                {"role": "user", "content": system_message + data}
+            ],
+            store=True,
         )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"Chat Completion error: {str(e)}")
 
-    # Retrieve the Assistant's response
-    messages = client.beta.threads.messages.list(
-        thread_id=thread.id
-    )
-
-    # Extract and return the Assistant's response
-    assistant_response = ""
-    for message in messages.data:
-        if message.role == "assistant":
-            assistant_response = message.content[0].text.value
-            break
-
-    return assistant_response
-
-
-# Optional: test locally
 if __name__ == "__main__":
     sample_text = """
-    Mars transiting Jupiter with a conjunction on 2025-01-01.
-    Transit intensity is high. 
+Day: 2025-02-23
+1. Transiting Planet: Mars, Natal Planet: Jupiter, Aspect: Square, Intensity: 0.573
+2. Transiting Planet: Mercury, Natal Planet: Mercury, Aspect: Trine, Intensity: 0.738
+
+Day: 2025-02-24
+1. Transiting Planet: Mars, Natal Planet: Jupiter, Aspect: Square, Intensity: 0.572
+2. Transiting Planet: Mercury, Natal Planet: Mercury, Aspect: Trine, Intensity: 0.967
     """
-    result = analyze_data_with_assistant(sample_text)
-    print("Assistant Analysis Result:")
+    result = analyze_data_with_chat_completion(sample_text)
+    print("Chat Completion Analysis Result:")
     print("-------------------------")
     print(result)

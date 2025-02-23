@@ -12,6 +12,9 @@ import transit_waveforms
 from flask_cors import CORS  # <-- Import this
 
 import openaiApi #gpt implemented
+
+from openaiApi import analyze_data_with_chat_completion  # Updated import
+
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env variables
@@ -225,24 +228,17 @@ def snapshot_aspect_chart_data():
 # -----------------------------------------------------------
 #   GPT Analysis Route
 # -----------------------------------------------------------
-@app.route("/analyze_waveforms", methods=["POST"])
+@app.route('/analyze_waveforms', methods=['POST'])
 def analyze_waveforms():
-    """
-    Receives waveforms (or any other data) from the frontend,
-    calls GPT for an analysis, and returns the analysis text.
-    """
     try:
-        data = request.json
-        if not data or "waveforms_text" not in data:
-            return jsonify({"error": "No 'waveforms_text' field provided."}), 400
+        data = request.json.get('waveforms_text', '')
+        if not data:
+            return jsonify({'error': 'No waveforms text provided'}), 400
 
-        waveforms_text = data["waveforms_text"]
-        result = openaiApi.analyze_data_with_assistant(waveforms_text)
-        print("[/analyze_waveforms] GPT analysis result:", result)
-        return jsonify({"analysis": result}), 200
+        analysis = analyze_data_with_chat_completion(data)
+        return jsonify({'analysis': analysis})
     except Exception as e:
-        print("[/analyze_waveforms] Error:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 # -----------------------------------------------------------
 #   Helper Functions
