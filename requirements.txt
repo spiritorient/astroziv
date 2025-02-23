@@ -11,3 +11,4 @@ plotly
 openai
 python-dotenv
 flask-cors
+gevent
