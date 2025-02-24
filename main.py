@@ -2,32 +2,73 @@ import os
 import platform
 import re
 from datetime import datetime
-
 from flask import Flask, jsonify, render_template, request
 import plotly.graph_objects as go
-
 import natal_chart
 import transit_waveforms
-
+import time
 from flask_cors import CORS
-
-import openaiApi #gpt implemented
-
-from openaiApi import analyze_data_with_chat_completion  # Updated import
-
+import openaiApi
+from openaiApi import analyze_data_with_chat_completion
 from dotenv import load_dotenv
+from openai import OpenAI  # Import for chat endpoint
 
-load_dotenv()  # Load .env variables
-
+load_dotenv()
 app = Flask(__name__)
 CORS(app)
+
+# Initialize OpenAI client globally (like openaiApi.py)
+client = OpenAI()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("Missing OPENAI_API_KEY environment variable.")
+ASSISTANT_ID = os.getenv("ASSISTANT_ID")  # Fetch from .env
 
 @app.route('/config')
 def get_config():
     return jsonify({
-        "api_key": os.getenv("OPENAI_API_KEY"),
-        "assistant_id": os.getenv("ASSISTANT_ID")
+        "assistant_id": ASSISTANT_ID  # No api_key here for security
     })
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    """
+    Handles chat requests from chat-widget.js, using the OpenAI client.
+    """
+    data = request.json
+    message = data.get('message')
+    thread_id = data.get('thread_id')
+
+    try:
+        # Create a thread if none provided
+        if not thread_id:
+            thread = client.beta.threads.create()
+            thread_id = thread.id
+
+        # Send user message
+        client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=message
+        )
+
+        # Run the assistant
+        run = client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=ASSISTANT_ID
+        )
+
+        # Poll for completion
+        while True:
+            run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+            if run_status.status == "completed":
+                messages = client.beta.threads.messages.list(thread_id=thread_id)
+                assistant_message = next(msg.content[0].text.value for msg in messages.data if msg.role == "assistant")
+                return jsonify({"reply": assistant_message, "thread_id": thread_id})
+            time.sleep(2)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 # -----------------------------------------------------------
 #   Planets, Signs, Aspects
 # -----------------------------------------------------------
