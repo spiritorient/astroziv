@@ -60,8 +60,11 @@ def chat():
 
         # Poll for completion
         while True:
-            run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
-            if run_status.status == "completed":
+            run = client.beta.threads.runs.create_and_poll(
+                thread_id=thread_id,
+                assistant_id=ASSISTANT_ID
+            )
+            if run.status == "completed":
                 messages = client.beta.threads.messages.list(thread_id=thread_id)
                 assistant_message = next(msg.content[0].text.value for msg in messages.data if msg.role == "assistant")
                 return jsonify({"reply": assistant_message, "thread_id": thread_id})
@@ -69,6 +72,11 @@ def chat():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    print(f"Sending message: {message}, Thread ID: {thread_id}")
+    print(f"Run created: {run.id}")
+    print(f"Messages retrieved: {messages.data}")
+
 # -----------------------------------------------------------
 #   Planets, Signs, Aspects
 # -----------------------------------------------------------
