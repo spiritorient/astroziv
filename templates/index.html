@@ -14,8 +14,6 @@
 
     <!-- Plotly (for waveforms and aspect wheels) -->
     <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
-
-    <script async src="{{ url_for('static', filename='chat-widget.js') }}"></script>
     
     <style>
         body {
@@ -1023,6 +1021,8 @@
                 loadNote();
             };
         </script>
+
+        <script async src="{{ url_for('static', filename='chat-widget.js') }}"></script>
 
     </div>
     
