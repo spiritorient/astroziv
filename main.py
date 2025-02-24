@@ -60,16 +60,20 @@ def chat():
 
         # Poll for completion
         while True:
-            run = client.beta.threads.runs.create_and_poll(
+            run_status = client.beta.threads.runs.retrieve(
                 thread_id=thread_id,
-                assistant_id=ASSISTANT_ID
+                run_id=run.id,
+                
             )
-            if run.status == "completed":
-                messages = client.beta.threads.messages.list(thread_id=thread_id)
-                assistant_message = next(msg.content[0].text.value for msg in messages.data if msg.role == "assistant")
-                return jsonify({"reply": assistant_message, "thread_id": thread_id})
-            time.sleep(2)
-
+            if run_status.status == "completed":
+                messages = client.beta.threads.messages.list(
+                    thread_id=thread_id,
+                    
+                )
+                return jsonify({"reply": messages.data[0].content[0].text.value})
+            elif run_status.status in ["failed", "cancelled", "expired"]:
+                return jsonify({"error": f"Run failed with status: {run_status.status}"}), 500
+            time.sleep(1)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
