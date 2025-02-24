@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 import natal_chart
 import transit_waveforms
 
+from flask_cors import CORS
+
 import openaiApi #gpt implemented
 
 from openaiApi import analyze_data_with_chat_completion  # Updated import
@@ -18,7 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()  # Load .env variables
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route('/config')
 def get_config():
